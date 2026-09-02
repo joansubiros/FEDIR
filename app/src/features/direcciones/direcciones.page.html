@@ -1,0 +1,18 @@
+<ion-header><ion-toolbar class="fedir-brand-header"><ion-title>Direcciones</ion-title></ion-toolbar><ion-toolbar><ion-searchbar (ionInput)="onSearch($event)" placeholder="Buscar"></ion-searchbar></ion-toolbar></ion-header>
+<ion-content>
+  <ng-container *ngIf="items$ | async as items">
+    <ion-list>
+      <ion-item *ngFor="let d of items">
+        <ion-label>
+          <h2>{{ d.nomDireccio }}</h2>
+          <p>{{ d.direccio }} — {{ d.poblacio }} ({{ d.provincia }})</p>
+          <p><small>{{ d.empresa }} {{ d.listContactes }}</small></p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+    <ion-infinite-scroll (ionInfinite)="onLoadMore($event)" [disabled]="!(hasMore$ | async)">
+      <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más..."></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+    <ion-text *ngIf="!items.length && !(loading$ | async)" class="ion-padding"><p>Sin resultados.</p></ion-text>
+  </ng-container>
+</ion-content>

@@ -1,0 +1,18 @@
+<div class="fedir-tab-inner">
+  <ion-tab-button tab="home" [class.tab-active]="active === 'home'" (click)="go('/home')">
+    <ion-icon name="home-outline"></ion-icon>
+    <ion-label>Inicio</ion-label>
+  </ion-tab-button>
+  <ion-tab-button tab="rutas" [class.tab-active]="active === 'rutas'" (click)="go('/rutas')">
+    <ion-icon name="map-outline"></ion-icon>
+    <ion-label>Rutas</ion-label>
+  </ion-tab-button>
+  <ion-tab-button tab="puntos" [class.tab-active]="active === 'puntos'" (click)="go('/direcciones')">
+    <ion-icon name="pin-outline"></ion-icon>
+    <ion-label>Puntos</ion-label>
+  </ion-tab-button>
+  <ion-tab-button tab="perfil" [class.tab-active]="active === 'perfil'">
+    <ion-icon name="person-outline"></ion-icon>
+    <ion-label>Perfil</ion-label>
+  </ion-tab-button>
+</div>

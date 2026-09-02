@@ -1,0 +1,18 @@
+<ion-header><ion-toolbar class="fedir-brand-header"><ion-buttons slot="start"><ion-back-button defaultHref="/rutas"></ion-back-button></ion-buttons><ion-title>Ruta</ion-title></ion-toolbar></ion-header>
+<ion-content *ngIf="ruta$ | async as r">
+  <ion-card>
+    <ion-card-header><ion-card-title>{{ r.fieldData.Data | fedirDate }}</ion-card-title><ion-card-subtitle>{{ r.fieldData.Temps_Privisio_txt }} · {{ r.fieldData.Km_Privisio | number:'1.1-1' }} km</ion-card-subtitle></ion-card-header>
+  </ion-card>
+  <ion-list>
+    <ion-list-header>Paradas ({{ r.portalParadas.length }})</ion-list-header>
+    <ion-item *ngFor="let p of r.portalParadas" [routerLink]="['/paradas', p.recordId]" detail>
+      <ion-label>
+        <h2>{{ p.nomDireccio }}</h2>
+        <p>{{ p.hDesde || '—' }} – {{ p.hFins || '—' }} <span *ngIf="p.tel1">· {{ p.tel1 }}</span></p>
+      </ion-label>
+      <ion-button slot="end" fill="clear" (click)="openMaps(p.nomDireccio); $event.stopPropagation()"><ion-icon name="navigate-outline"></ion-icon></ion-button>
+      <ion-button slot="end" fill="clear" *ngIf="p.tel1" (click)="callTel(p.tel1); $event.stopPropagation()"><ion-icon name="call-outline"></ion-icon></ion-button>
+    </ion-item>
+  </ion-list>
+  <ion-spinner *ngIf="loading$ | async"></ion-spinner>
+</ion-content>

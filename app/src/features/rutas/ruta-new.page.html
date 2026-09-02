@@ -1,0 +1,20 @@
+<ion-header><ion-toolbar class="fedir-brand-header"><ion-buttons slot="start"><ion-back-button defaultHref="/rutas"></ion-back-button></ion-buttons><ion-title>Nueva ruta</ion-title></ion-toolbar></ion-header>
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <ion-card class="fedir-card">
+      <ion-card-content class="fedir-login-card-content">
+        <ion-input class="fedir-input" label="Fecha (MM/DD/YYYY)" labelPlacement="floating" fill="outline" formControlName="Data" placeholder=" "></ion-input>
+        <ion-input class="fedir-input ion-margin-top" label="Id Vehículo" labelPlacement="floating" fill="outline" formControlName="Id_Vehicle" placeholder=" "></ion-input>
+        @if (error) {
+          <ion-text color="danger"><p>{{ error }}</p></ion-text>
+        }
+        <ion-button expand="block" type="submit" [disabled]="form.invalid || saving" class="ion-margin-top fedir-submit">
+          @if (saving) {
+            <ion-spinner slot="start" name="crescent"></ion-spinner>
+          }
+          Crear
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </form>
+</ion-content>

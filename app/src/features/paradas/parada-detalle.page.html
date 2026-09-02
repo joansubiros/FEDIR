@@ -1,0 +1,26 @@
+<ion-header><ion-toolbar class="fedir-brand-header"><ion-buttons slot="start"><ion-back-button defaultHref="/rutas"></ion-back-button></ion-buttons><ion-title>Parada</ion-title></ion-toolbar></ion-header>
+<ion-content *ngIf="parada$ | async as p" class="ion-padding">
+  <p style="white-space:pre-line">{{ p.etiquetaDireccio }}</p>
+  <p><small>{{ p.tipUsContenidor }} · {{ p.quantContenidor }} · {{ p.tipUsUd }} · {{ p.preuUd | number }} — {{ p.tel1 }} {{ p.nom }}</small></p>
+  <ion-item><ion-input label="Entregados" type="number" [(ngModel)]="quantContEntregats"></ion-input></ion-item>
+  <ion-item><ion-input label="Recogidos" type="number" [(ngModel)]="quantContRecollits"></ion-input></ion-item>
+  <ion-item><ion-input label="Kg" type="number" [(ngModel)]="quantKg"></ion-input></ion-item>
+  <ion-item><ion-input label="Litros" type="number" [(ngModel)]="quantL"></ion-input></ion-item>
+  <ion-item><ion-input label="Observaciones" [(ngModel)]="observacions"></ion-input></ion-item>
+  <ion-item><ion-input label="Motivo anulado" [(ngModel)]="motiuAnulat"></ion-input></ion-item>
+  <ion-item>
+    <ion-select label="Estado" [(ngModel)]="flagFet"><ion-select-option value="">Pendiente</ion-select-option><ion-select-option value="1">Hecho</ion-select-option></ion-select>
+  </ion-item>
+  <ion-item>
+    <ion-select label="Anulado" [(ngModel)]="flagAnulat"><ion-select-option value="">No</ion-select-option><ion-select-option value="1">Sí</ion-select-option></ion-select>
+  </ion-item>
+  @if (error) {
+    <ion-text color="danger"><p>{{ error }}</p></ion-text>
+  }
+  <ion-button expand="block" (click)="save()" [disabled]="saving" class="ion-margin-top fedir-submit">
+    @if (saving) {
+      <ion-spinner slot="start" name="crescent"></ion-spinner>
+    }
+    Guardar
+  </ion-button>
+</ion-content>

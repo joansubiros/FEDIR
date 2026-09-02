@@ -1,0 +1,23 @@
+<ion-header><ion-toolbar class="fedir-brand-header"><ion-title>FEDIR</ion-title></ion-toolbar></ion-header>
+<ion-content class="ion-padding">
+  <div class="fedir-login-hero">
+    <img src="assets/branding/logo-fedir-horizontal.png" alt="FEDIR — Logística y Gestión Sustentable" width="560" height="239" />
+  </div>
+  <form [formGroup]="form" (ngSubmit)="submit()">
+    <ion-card class="fedir-card ion-margin-top">
+      <ion-card-content class="fedir-login-card-content">
+        <ion-input class="fedir-input" label="Usuario" labelPlacement="floating" fill="outline" formControlName="username" autocomplete="username" placeholder=" "></ion-input>
+        <ion-input class="fedir-input ion-margin-top" label="Contraseña" labelPlacement="floating" fill="outline" type="password" formControlName="password" autocomplete="current-password" placeholder=" "></ion-input>
+        @if (error) {
+          <ion-text color="danger"><p class="ion-padding-start">{{ error }}</p></ion-text>
+        }
+        <ion-button expand="block" type="submit" [disabled]="form.invalid || loading" class="ion-margin-top fedir-submit">
+          @if (loading) {
+            <ion-spinner slot="start" name="crescent"></ion-spinner>
+          }
+          Entrar
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </form>
+</ion-content>

@@ -1,0 +1,79 @@
+# =====================
+# FEDIR - Root .gitignore
+# =====================
+
+# OS / Editor files
+*~
+*.sw[mnpcod]
+.tmp
+*.tmp
+*.tmp.*
+UserInterfaceState.xcuserstate
+$RECYCLE.BIN/
+*.log
+log.txt
+.DS_Store
+Thumbs.db
+
+# =====================
+# Ionic / Angular app (app/)
+# =====================
+app/.ionic
+app/www
+app/platforms
+app/plugins
+app/dist
+app/.angular
+app/.angular/cache
+app/.sourcemaps
+app/.versions
+app/coverage
+app/node_modules
+app/npm-debug.log
+app/yarn-error.log
+app/.sass-cache
+
+# =====================
+# Firebase
+# =====================
+app/.firebase
+app/.firebaserc
+
+# =====================
+# Build outputs
+# =====================
+app/out-tsc
+app/tmp
+app/bazel-out
+
+# =====================
+# IDE
+# =====================
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-project
+*.sublime-workspace
+
+# VS Code (keep settings)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/*
+
+# Agent skills (local only)
+.kilo/
+
+# =====================
+# Misc
+# =====================
+*.sublime-workspace
+connect.lock
+libpeerconnection.log
+testem.log
+/typings

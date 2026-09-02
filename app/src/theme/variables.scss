@@ -1,0 +1,73 @@
+:root {
+  --ion-color-primary: #1084bd;
+  --ion-color-primary-rgb: 16, 132, 189;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #0e74a6;
+  --ion-color-primary-tint: #2890c4;
+
+  --ion-color-secondary: #010101;
+  --ion-color-secondary-rgb: 1, 1, 1;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #010101;
+  --ion-color-secondary-tint: #1a1a1a;
+
+  --ion-color-tertiary: #3aa0d0;
+  --ion-color-tertiary-rgb: 58, 160, 208;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-shade: #338db7;
+  --ion-color-tertiary-tint: #4eaad5;
+
+  --ion-color-success: #1a9e5c;
+  --ion-color-warning: #e6a817;
+  --ion-color-danger: #c5000f;
+  --ion-color-dark: #010101;
+  --ion-color-dark-rgb: 1, 1, 1;
+  --ion-color-medium: #6b7a80;
+  --ion-color-light: #f4f7f9;
+
+  --ion-background-color: #ffffff;
+  --ion-background-color-rgb: 255, 255, 255;
+  --ion-text-color: #0f172a;
+  --ion-text-color-rgb: 15, 23, 42;
+  --ion-border-color: #e2e8f0;
+
+  --ion-toolbar-background: #ffffff;
+  --ion-toolbar-color: #010101;
+  --ion-toolbar-border-color: rgba(16, 132, 189, 0.14);
+
+  --ion-item-background: #ffffff;
+}
+
+.ion-color-primary {
+  --ion-color-base: var(--ion-color-primary);
+  --ion-color-base-rgb: var(--ion-color-primary-rgb);
+  --ion-color-contrast: var(--ion-color-primary-contrast);
+  --ion-color-contrast-rgb: var(--ion-color-primary-contrast-rgb);
+  --ion-color-shade: var(--ion-color-primary-shade);
+  --ion-color-tint: var(--ion-color-primary-tint);
+}
+
+.ion-color-secondary {
+  --ion-color-base: var(--ion-color-secondary);
+  --ion-color-base-rgb: var(--ion-color-secondary-rgb);
+  --ion-color-contrast: var(--ion-color-secondary-contrast);
+  --ion-color-contrast-rgb: var(--ion-color-secondary-contrast-rgb);
+  --ion-color-shade: var(--ion-color-secondary-shade);
+  --ion-color-tint: var(--ion-color-secondary-tint);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root body {
+    --ion-background-color: #0b1220;
+    --ion-background-color-rgb: 11, 18, 32;
+    --ion-text-color: #eef2f7;
+    --ion-text-color-rgb: 238, 242, 247;
+    --ion-border-color: #1e2e45;
+    --ion-toolbar-background: #0f172a;
+    --ion-toolbar-color: #ffffff;
+    --ion-item-background: #111d33;
+    --ion-color-light: #1e2e45;
+  }
+}

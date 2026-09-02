@@ -1,0 +1,186 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/**
+ * Ionic Dark Mode
+ * -----------------------------------------------------
+ * For more info, please see:
+ * https://ionicframework.com/docs/theming/dark-mode
+ */
+
+/* @import "@ionic/angular/css/palettes/dark.always.css"; */
+/* @import "@ionic/angular/css/palettes/dark.class.css"; */
+@import "@ionic/angular/css/palettes/dark.system.css";
+
+/* Menú home — FEDIR */
+.menu-btn {
+  height: 122px;
+  margin: 6px 0;
+  --border-radius: 18px;
+  --background: #ffffff;
+  --color: #010101;
+  --box-shadow: 0 8px 24px rgba(1, 1, 1, 0.08);
+  border: 1px solid rgba(16, 132, 189, 0.12);
+}
+
+.menu-btn[color="primary"] {
+  --background: linear-gradient(135deg, #1084bd 0%, #0e74a6 100%);
+  --color: #ffffff;
+}
+
+.menu-btn-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.menu-btn-content ion-icon {
+  font-size: 34px;
+  color: var(--ion-color-primary);
+  opacity: 0.95;
+}
+
+.menu-btn[color="primary"] .menu-btn-content ion-icon {
+  color: #ffffff;
+}
+
+.menu-btn-content span {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.fedir-brand-header {
+  --background: #ffffff;
+  --color: #010101;
+  border-bottom: 3px solid #1084bd;
+}
+
+.fedir-brand-header ion-title {
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.fedir-login-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 0 6px;
+}
+
+.fedir-login-hero img {
+  width: min(280px, 76vw);
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 6px 14px rgba(1, 1, 1, 0.08));
+}
+
+.fedir-login-subtitle {
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ion-color-medium);
+  font-weight: 700;
+  text-align: center;
+}
+
+.fedir-card {
+  --background: #ffffff;
+  border: 1px solid rgba(16, 132, 189, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 10px 28px rgba(1, 1, 1, 0.08);
+  overflow: hidden;
+}
+
+.fedir-login-card-content {
+  padding-top: 18px;
+}
+
+.fedir-input {
+  --border-radius: 12px;
+  --padding-top: 14px;
+  --padding-bottom: 14px;
+  --highlight-color-focused: #1084bd;
+  min-height: 56px;
+}
+
+.fedir-input.has-focus {
+  --border-color: #1084bd;
+}
+
+.fedir-submit {
+  --background: #1084bd;
+  --background-hover: #0e74a6;
+  --background-activated: #0c6593;
+  --color: #ffffff;
+  --border-radius: 14px;
+  height: 48px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 14px;
+}
+
+.fedir-home-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 8px 14px;
+  margin-bottom: 6px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(16, 132, 189, 0.08), rgba(16, 132, 189, 0.02));
+  border: 1px solid rgba(16, 132, 189, 0.1);
+}
+
+.fedir-home-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: #010101;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+}
+
+.fedir-home-user ion-icon {
+  font-size: 22px;
+  color: #1084bd;
+}
+
+.fedir-home-date {
+  font-size: 12px;
+  color: var(--ion-color-medium);
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.fedir-with-footer {
+  --padding-bottom: calc(56px + var(--ion-safe-area-bottom, 0px) + 8px);
+}

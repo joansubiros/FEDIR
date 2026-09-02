@@ -1,0 +1,58 @@
+<ion-header><ion-toolbar class="fedir-brand-header"><ion-title>FEDIR</ion-title></ion-toolbar></ion-header>
+<ion-content class="ion-padding fedir-with-footer">
+  <div class="fedir-home-hero">
+    <div class="fedir-home-user">
+      <ion-icon name="person-circle-outline"></ion-icon>
+      <span>{{ username }}</span>
+    </div>
+    <div class="fedir-home-date">{{ today | todayDate }}</div>
+  </div>
+
+  <div class="fedir-dash-stats">
+    <div class="fedir-stat-card fedir-stat-primary">
+      <ion-icon name="today-outline"></ion-icon>
+      <div class="fedir-stat-value">{{ rutasHoy }}</div>
+      <div class="fedir-stat-label">Rutas hoy</div>
+    </div>
+    <div class="fedir-stat-card fedir-stat-warning">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <div class="fedir-stat-value">{{ pendientesTotales }}</div>
+      <div class="fedir-stat-label">Pendientes</div>
+    </div>
+    <div class="fedir-stat-card">
+      <ion-icon name="file-tray-stacked-outline"></ion-icon>
+      <div class="fedir-stat-value">{{ totalRutas }}</div>
+      <div class="fedir-stat-label">Total</div>
+    </div>
+  </div>
+
+  <div class="fedir-dash-section">
+    <div class="fedir-dash-header">
+      <span>Rutas recientes</span>
+      <ion-button fill="clear" size="small" (click)="goRutas()">Ver todas</ion-button>
+    </div>
+
+    <ion-spinner *ngIf="loading$ | async" class="ion-margin"></ion-spinner>
+
+    <ion-text *ngIf="error$ | async" color="danger" class="ion-padding">
+      <p>{{ error$ | async }}</p>
+    </ion-text>
+
+    <ng-container *ngIf="recent$ | async as items">
+      <ion-list class="fedir-dash-list">
+        <ion-item *ngFor="let r of items" [routerLink]="['/rutas', r.recordId]" detail>
+          <ion-icon name="map-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>
+            <h2>{{ r.data | fedirDate }} · {{ r.matricula || '—' }}</h2>
+            <p>#{{ r.idRutaSerial }} · {{ r.countPunts }} paradas</p>
+          </ion-label>
+          <ion-badge slot="end" [color]="r.countPuntsPendents ? 'warning' : 'success'">
+            {{ r.countPuntsPendents ? r.countPuntsPendents + ' pend.' : 'OK' }}
+          </ion-badge>
+        </ion-item>
+      </ion-list>
+      <ion-text *ngIf="!items.length" class="ion-padding"><p>Sin rutas recientes.</p></ion-text>
+    </ng-container>
+  </div>
+</ion-content>
+

@@ -1,0 +1,20 @@
+<ion-header><ion-toolbar class="fedir-brand-header"><ion-title>Rutas</ion-title><ion-buttons slot="end"><ion-button routerLink="/rutas/new">Nueva</ion-button></ion-buttons></ion-toolbar></ion-header>
+<ion-content class="fedir-with-footer">
+  <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)"><ion-refresher-content></ion-refresher-content></ion-refresher>
+  <ng-container *ngIf="items$ | async as items">
+    <ion-list>
+      <ion-item *ngFor="let r of items" [routerLink]="['/rutas', r.recordId]" detail>
+        <ion-label>
+          <h2>{{ r.data | fedirDate }} — {{ r.matricula || '—' }}</h2>
+          <p>#{{ r.idRutaSerial }} · {{ r.countPunts }} paradas · {{ r.countPuntsPendents }} pendientes</p>
+        </ion-label>
+        <ion-badge slot="end" [color]="r.countPuntsPendents ? 'warning' : 'success'">{{ r.countPuntsPendents ? r.countPuntsPendents + ' pend.' : 'OK' }}</ion-badge>
+      </ion-item>
+    </ion-list>
+    <ion-infinite-scroll (ionInfinite)="onLoadMore($event)" [disabled]="!(hasMore$ | async)">
+      <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más..."></ion-infinite-scroll-content>
+    </ion-infinite-scroll>
+    <ion-text *ngIf="!items.length && !(loading$ | async)" class="ion-padding"><p>Sin rutas.</p></ion-text>
+  </ng-container>
+  <ion-spinner *ngIf="loading$ | async" class="ion-margin"></ion-spinner>
+</ion-content>
