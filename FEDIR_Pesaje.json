@@ -1,0 +1,199 @@
+{
+  "name": "FEDIR_Pesaje",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Pesaje",
+        "formDescription": "Introduce los datos del pesaje",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Lugar",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "SODIR SRL"
+                  },
+                  {
+                    "option": "Cereales Caviglia"
+                  },
+                  {
+                    "option": "Carlos Vivas"
+                  },
+                  {
+                    "option": "Basavilvaso"
+                  },
+                  {
+                    "option": "Perros"
+                  },
+                  {
+                    "option": "Alejo"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Fecha Pesaje",
+              "fieldType": "date",
+              "defaultValue": "={{ new Date().toISOString().split('T')[0] }}",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Responsable",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "fbellota"
+                  },
+                  {
+                    "option": "mbarbitta"
+                  },
+                  {
+                    "option": "grodriguez"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Vehículo",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "AE960KV"
+                  },
+                  {
+                    "option": "KTQ678"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Unidad",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Kilogramos"
+                  },
+                  {
+                    "option": "Litros"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Peso Entrante",
+              "fieldType": "number",
+              "placeholder": "Kilogramos"
+            },
+            {
+              "fieldLabel": "Peso Saliente",
+              "fieldType": "number",
+              "placeholder": "Kilogramos"
+            },
+            {
+              "fieldLabel": "Volumen",
+              "fieldType": "number",
+              "placeholder": "Litros"
+            },
+            {
+              "fieldLabel": "Observaciones"
+            }
+          ]
+        },
+        "options": {
+          "respondWithOptions": {
+            "values": {
+              "formSubmittedText": "El Formulario ha sido enviado"
+            }
+          },
+          "ignoreBots": true,
+          "useWorkflowTimezone": true
+        }
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -144,
+        224
+      ],
+      "id": "4c16f811-68e8-4262-a99b-4332c00a14b9",
+      "name": "On form submission",
+      "webhookId": "0cef173b-b83e-40d8-85f3-d221a0d1b1cf"
+    },
+    {
+      "parameters": {
+        "action": "performscript",
+        "layout": "PROVEIDORS",
+        "script": "Pes_FormWeb_PSOS",
+        "scriptParam": "={{ JSON.stringify($input.item.json) }}"
+      },
+      "type": "n8n-nodes-base.filemaker",
+      "typeVersion": 1,
+      "position": [
+        144,
+        224
+      ],
+      "id": "8e4d5ed0-b03e-430e-b805-4b4cdea13bd1",
+      "name": "FileMaker",
+      "alwaysOutputData": true,
+      "credentials": {
+        "fileMaker": {
+          "id": "c7WEP38QsJUsrwZT",
+          "name": "FEDIR"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "Gracias, hemos recibido tu formulario.",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "0d5e3c87-a9bf-4ae2-b944-0e41da25f670",
+      "name": "Respond to Webhook",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "FileMaker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "916c8164-4a35-4f89-8ca3-d11a46d009fe",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "24323f1d850949c97114ac7c76a03f3096ce6e7800599a9a956f6865bb197376"
+  },
+  "nodeGroups": [],
+  "id": "MGm6Jg62qE4yrBVFF4HQY",
+  "tags": []
+}

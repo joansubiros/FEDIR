@@ -1,18 +1,86 @@
-<ion-header><ion-toolbar class="fedir-brand-header"><ion-buttons slot="start"><ion-back-button defaultHref="/rutas"></ion-back-button></ion-buttons><ion-title>Ruta</ion-title></ion-toolbar></ion-header>
-<ion-content *ngIf="ruta$ | async as r">
-  <ion-card>
-    <ion-card-header><ion-card-title>{{ r.fieldData.Data | fedirDate }}</ion-card-title><ion-card-subtitle>{{ r.fieldData.Temps_Privisio_txt }} · {{ r.fieldData.Km_Privisio | number:'1.1-1' }} km</ion-card-subtitle></ion-card-header>
-  </ion-card>
-  <ion-list>
-    <ion-list-header>Paradas ({{ r.portalParadas.length }})</ion-list-header>
-    <ion-item *ngFor="let p of r.portalParadas" [routerLink]="['/paradas', p.recordId]" detail>
-      <ion-label>
-        <h2>{{ p.nomDireccio }}</h2>
-        <p>{{ p.hDesde || '—' }} – {{ p.hFins || '—' }} <span *ngIf="p.tel1">· {{ p.tel1 }}</span></p>
+<ion-header>
+  <ion-toolbar class="fedir-brand-header fedir-route-toolbar">
+    <ion-title>RUTA {{ routeSerialParam || '...' }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button class="fedir-route-info" fill="clear" (click)="showInfo = true" aria-label="Información de la ruta"><ion-icon name="information-circle-outline"></ion-icon></ion-button>
+      <ion-button fill="clear" (click)="router.navigateByUrl('/rutas')" aria-label="Cerrar"><ion-icon name="close-outline"></ion-icon></ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="fedir-route-content">
+  <ng-container *ngIf="ruta as r; else routeState">
+  <section class="fedir-route-summary">
+    <strong>{{ r.fieldData.Data | fedirDate }}</strong>
+    <span *ngIf="r.fieldData.Temps_Privisio_txt">{{ r.fieldData.Temps_Privisio_txt }}</span>
+    <span *ngIf="r.fieldData.Km_Privisio">{{ r.fieldData.Km_Privisio | number:'1.1-1' }} km</span>
+  </section>
+
+  <section class="fedir-route-actions">
+    <ion-button *ngIf="canAddPoint(r)" fill="outline" (click)="openAddPoint(r)"><ion-icon slot="start" name="add-outline"></ion-icon>Punto</ion-button>
+    <ng-container *ngIf="nextPending(r.portalParadas) as next">
+      <ion-button fill="outline" (click)="openNavigation(next, 'waze')"><ion-icon slot="start" name="navigate-outline"></ion-icon>Waze</ion-button>
+      <ion-button fill="outline" (click)="openNavigation(next, 'maps')"><ion-icon slot="start" name="map-outline"></ion-icon>Maps</ion-button>
+    </ng-container>
+  </section>
+
+  <ion-text *ngIf="error" color="danger"><p class="fedir-route-error">{{ error }}</p></ion-text>
+  <ion-list class="fedir-route-list">
+    <ion-list-header>Puntos ({{ r.portalParadas.length }})</ion-list-header>
+    <ion-item *ngFor="let p of r.portalParadas; let i = index" class="fedir-route-point" [class.fedir-point-done]="p.flagFet === '1' && p.flagAnulat !== '1'" [class.fedir-point-cancelled]="p.flagAnulat === '1'">
+      <div class="fedir-point-order" slot="start">{{ i + 1 }}</div>
+      <ion-label class="fedir-point-label">
+        <h2>{{ hasClient(p) ? ((p.idClientPrint || p.idClient || 'Cliente') + ' · ' + (p.nomEmpresa || 'Cliente sin nombre')) : (p.nomDireccio || p.etiquetaDireccio || 'Punto sin nombre') }}</h2>
+        <p *ngIf="hasClient(p) && p.direccio">{{ p.direccio }}</p>
+        <p *ngIf="p.hDesde && p.hFins">{{ p.hDesde }} – {{ p.hFins }}<span *ngIf="p.tel1"> · {{ p.tel1 }}</span></p>
+        <p *ngIf="(!p.hDesde || !p.hFins) && p.tel1">{{ p.tel1 }}</p>
       </ion-label>
-      <ion-button slot="end" fill="clear" (click)="openMaps(p.nomDireccio); $event.stopPropagation()"><ion-icon name="navigate-outline"></ion-icon></ion-button>
-      <ion-button slot="end" fill="clear" *ngIf="p.tel1" (click)="callTel(p.tel1); $event.stopPropagation()"><ion-icon name="call-outline"></ion-icon></ion-button>
+      <div class="fedir-point-tools" slot="end">
+        <ion-button *ngIf="hasClient(p)" fill="clear" (click)="openPesaje($event)" aria-label="Crear pesaje"><ion-icon name="scale-outline"></ion-icon></ion-button>
+        <ng-container *ngIf="!hasClient(p)">
+          <ng-container *ngIf="canReorderPoints && p.flagFet !== '1' && p.flagAnulat !== '1'">
+            <ion-button *ngIf="i > 0" fill="clear" [disabled]="savingOrder" (click)="handleMove($event, r.portalParadas, i, -1)" aria-label="Subir punto"><ion-icon name="arrow-up-outline"></ion-icon></ion-button>
+            <ion-button *ngIf="i < r.portalParadas.length - 1" fill="clear" [disabled]="savingOrder" (click)="handleMove($event, r.portalParadas, i, 1)" aria-label="Bajar punto"><ion-icon name="arrow-down-outline"></ion-icon></ion-button>
+          </ng-container>
+          <ion-button fill="clear" (click)="openPoint($event, p.recordId, r)" aria-label="Editar punto"><ion-icon name="create-outline"></ion-icon></ion-button>
+        </ng-container>
+      </div>
     </ion-item>
   </ion-list>
   <ion-spinner *ngIf="loading$ | async"></ion-spinner>
+
+  <div class="fedir-route-modal" *ngIf="showInfo">
+    <div class="fedir-route-modal-panel">
+      <ion-button fill="clear" class="fedir-modal-close" (click)="showInfo = false" aria-label="Cerrar información"><ion-icon name="close-outline"></ion-icon></ion-button>
+      <h2>Información de la ruta</h2>
+      <ion-item><ion-label>Fecha</ion-label><ion-note slot="end">{{ r.fieldData.Data | fedirDate }}</ion-note></ion-item>
+      <ion-item><ion-label>Vehículo</ion-label><ion-note slot="end">{{ r.fieldData.Id_Vehicle || '—' }}</ion-note></ion-item>
+      <ion-item><ion-label>Personal 1</ion-label><ion-note slot="end">{{ r.fieldData.Nom_Personal_1 || r.fieldData.Id_Personal_1 || '—' }}</ion-note></ion-item>
+      <ion-item><ion-label>Personal 2</ion-label><ion-note slot="end">{{ r.fieldData.Nom_Personal_2 || r.fieldData.Id_Personal_2 || '—' }}</ion-note></ion-item>
+      <ion-item><ion-label>Personal 3</ion-label><ion-note slot="end">{{ r.fieldData.Nom_Personal_3 || r.fieldData.Id_Personal_3 || '—' }}</ion-note></ion-item>
+    </div>
+  </div>
+
+  <div class="fedir-route-modal" *ngIf="showAddPoint">
+    <div class="fedir-route-modal-panel fedir-add-point-panel">
+      <ion-button fill="clear" class="fedir-modal-close" (click)="showAddPoint = false" aria-label="Cerrar búsqueda"><ion-icon name="close-outline"></ion-icon></ion-button>
+      <h2>Añadir punto</h2>
+      <ion-searchbar placeholder="Buscar punto de recogida" [value]="addressQuery" (ionInput)="searchPoints($event)"></ion-searchbar>
+      <ion-list>
+        <ion-item *ngFor="let point of addressResults$ | async" button (click)="addPoint(point, r)">
+          <ion-label><h3>{{ point.nomDireccio }}</h3><p>{{ point.direccio }} · {{ point.poblacio }}</p></ion-label>
+        </ion-item>
+      </ion-list>
+    </div>
+  </div>
+  </ng-container>
+  <ng-template #routeState>
+    <div class="fedir-route-state" *ngIf="loading$ | async; else routeError">
+      <ion-spinner></ion-spinner>
+      <p>Cargando ruta {{ routeSerialParam || '' }}...</p>
+    </div>
+  </ng-template>
+  <ng-template #routeError>
+    <ion-text color="danger"><p class="fedir-route-error">{{ error || 'No se pudo cargar la ruta' }}</p></ion-text>
+  </ng-template>
 </ion-content>

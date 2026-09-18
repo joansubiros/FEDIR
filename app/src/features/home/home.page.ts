@@ -2,7 +2,6 @@ import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { catchError, finalize, map } from 'rxjs/operators';
-import { SessionService } from '../../core/services/session.service';
 import { RutaService } from '../../core/services/ruta.service';
 import type { RutaListItem } from '../../core/models/fm.models';
 
@@ -14,20 +13,18 @@ import type { RutaListItem } from '../../core/models/fm.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePage implements OnInit {
+  private readonly proveedorUrl = 'https://n8n.fmsuit.net/webhook/proveedor';
   today = new Date();
   loading$ = new BehaviorSubject<boolean>(false);
   error$ = new BehaviorSubject<string | null>(null);
 
   recent$: Observable<RutaListItem[]> | null = null;
-  totalRutas = 0;
   pendientesTotales = 0;
-  rutasHoy = 0;
 
   private todayKey = this.formatDateKey(this.today);
 
   constructor(
     private router: Router,
-    private session: SessionService,
     private rutas: RutaService,
   ) {}
 
@@ -36,8 +33,6 @@ export class HomePage implements OnInit {
     this.error$.next(null);
     this.recent$ = this.rutas.list(20, 0).pipe(
       map(res => {
-        this.totalRutas = res.total;
-        this.rutasHoy = res.items.filter(r => this.isToday(r.data)).length;
         this.pendientesTotales = res.items.reduce((acc, r) => acc + (r.countPuntsPendents ?? 0), 0);
         return res.items.slice(0, 5);
       }),
@@ -49,10 +44,6 @@ export class HomePage implements OnInit {
     );
   }
 
-  get username(): string {
-    return this.session.getCredentials()?.username ?? '—';
-  }
-
   goRutas(): void {
     this.router.navigateByUrl('/rutas');
   }
@@ -61,11 +52,33 @@ export class HomePage implements OnInit {
     this.router.navigateByUrl(`/rutas/${recordId}`);
   }
 
+  crearPesaje(): void {
+    void this.router.navigate(['/pesajes', 'nuevo']);
+  }
+
+  nuevoProveedor(): void {
+    window.open(this.proveedorUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  enviarLinkNuevoProveedor(): void {
+    const input = window.prompt('Introduzca el teléfono de WhatsApp con prefijo de país:');
+    if (input === null) return;
+
+    const phone = input.replace(/\D/g, '');
+    if (phone.length < 8 || phone.length > 15) {
+      window.alert('Introduzca un número de WhatsApp válido, con prefijo de país.');
+      return;
+    }
+
+    const message = `Hola, aquí tiene su enlace para rellenar el formulario: ${this.proveedorUrl} .Saludos`;
+    window.location.href = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
+  }
+
   refrescar(): void {
     this.ngOnInit();
   }
 
-  private isToday(data: string): boolean {
+  isToday(data: string): boolean {
     return this.formatDateKey(new Date(data)) === this.todayKey;
   }
 

@@ -14,7 +14,7 @@ export class AppComponent {
   constructor(private router: Router) {
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: unknown) => {
       const url = (e as NavigationEnd).urlAfterRedirects;
-      this.showTabs = !url.startsWith('/auth');
+      this.showTabs = !url.startsWith('/auth') && !url.startsWith('/paradas');
     });
   }
 }

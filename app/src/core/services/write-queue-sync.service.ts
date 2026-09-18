@@ -76,6 +76,9 @@ export class WriteQueueSyncService {
     if (item.kind === 'delete' && item.recordId) {
       return this.fm.deleteRecord(item.layout, item.recordId).toPromise();
     }
+    if (item.kind === 'script' && item.script) {
+      return this.fm.executeScript(item.layout, item.script, item.scriptParam).toPromise();
+    }
     return Promise.reject(new Error('Invalid queued write'));
   }
 

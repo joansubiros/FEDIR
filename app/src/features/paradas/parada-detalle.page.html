@@ -1,7 +1,11 @@
-<ion-header><ion-toolbar class="fedir-brand-header"><ion-buttons slot="start"><ion-back-button defaultHref="/rutas"></ion-back-button></ion-buttons><ion-title>Parada</ion-title></ion-toolbar></ion-header>
-<ion-content *ngIf="parada$ | async as p" class="ion-padding">
-  <p style="white-space:pre-line">{{ p.etiquetaDireccio }}</p>
-  <p><small>{{ p.tipUsContenidor }} · {{ p.quantContenidor }} · {{ p.tipUsUd }} · {{ p.preuUd | number }} — {{ p.tel1 }} {{ p.nom }}</small></p>
+<ion-header>
+  <ion-toolbar class="fedir-brand-header fedir-point-toolbar">
+    <ion-buttons slot="start"><ion-button fill="clear" (click)="backToRoute()" aria-label="Volver a la ruta"><ion-icon name="arrow-back-outline"></ion-icon></ion-button></ion-buttons>
+    <ion-title>{{ pageTitle$ | async }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+<ion-content *ngIf="parada$ | async as p" class="ion-padding fedir-with-footer fedir-point-content">
+  <p class="fedir-point-address">{{ displayAddress$ | async }}</p>
   <ion-item><ion-input label="Entregados" type="number" [(ngModel)]="quantContEntregats"></ion-input></ion-item>
   <ion-item><ion-input label="Recogidos" type="number" [(ngModel)]="quantContRecollits"></ion-input></ion-item>
   <ion-item><ion-input label="Kg" type="number" [(ngModel)]="quantKg"></ion-input></ion-item>

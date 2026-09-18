@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { map, tap, switchMap, catchError } from 'rxjs/operators';
+import { map, tap, switchMap, catchError, timeout } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { SessionService } from './session.service';
 import type { FmLoginResponse, FmFindResponse, FmSingleResponse, FmCreateResponse, FmRecord } from '../models/fm.models';
@@ -29,6 +29,7 @@ export class FileMakerService {
       Authorization: 'Basic ' + btoa(`${username}:${password}`),
     });
     return this.http.post<FmLoginResponse>(url, {}, { headers }).pipe(
+      timeout(15000),
       map(res => {
         const token = res.response?.token;
         if (!token) throw new Error('No token in response');
@@ -39,6 +40,7 @@ export class FileMakerService {
         this.session.setToken(token);
       }),
       catchError(err => {
+        if (err?.name === 'TimeoutError') return throwError(() => new Error('Tiempo de espera agotado al conectar con fmsuit.cat')); 
         if (err?.status === 401 && err?.error?.messages?.[0]?.code === '212') return throwError(() => err);
         if (err?.status === 0) return throwError(() => err);
         return throwError(() => err);

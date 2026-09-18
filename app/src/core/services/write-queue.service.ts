@@ -4,12 +4,14 @@ import { openDB, DBSchema, IDBPDatabase } from 'idb';
 export interface QueuedWrite {
   id?: number;
   createdAt: number;
-  kind: 'create' | 'update' | 'delete';
+  kind: 'create' | 'update' | 'delete' | 'script';
   database: string;
   layout: string;
   recordId?: string;
   fieldData?: Record<string, unknown>;
   portalData?: Record<string, unknown[]>;
+  script?: string;
+  scriptParam?: string;
   attempts: number;
   lastError?: string;
 }

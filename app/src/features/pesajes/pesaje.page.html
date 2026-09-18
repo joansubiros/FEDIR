@@ -1,0 +1,138 @@
+<ion-header>
+  <ion-toolbar class="fedir-brand-header">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Crear Pesaje</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding fedir-with-footer">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <ion-card class="fedir-card pesaje-card">
+      <ion-card-content class="fedir-login-card-content">
+        <ion-select
+          class="fedir-input"
+          label="Lugar *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Lugar"
+          interface="action-sheet"
+          placeholder="Seleccionar lugar"
+        >
+          @for (l of lugaresList; track l) {
+            <ion-select-option [value]="l">{{ l }}</ion-select-option>
+          }
+        </ion-select>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="Fecha pesaje *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Fecha"
+          type="date"
+          [max]="todayKey"
+        ></ion-input>
+
+        <ion-select
+          class="fedir-input ion-margin-top"
+          label="Responsable *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Responsable"
+          interface="action-sheet"
+          placeholder="Seleccionar responsable"
+        >
+          @for (r of responsablesList; track r) {
+            <ion-select-option [value]="r">{{ r }}</ion-select-option>
+          }
+        </ion-select>
+
+        <ion-select
+          class="fedir-input ion-margin-top"
+          label="Vehículo *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Vehiculo"
+          interface="action-sheet"
+          placeholder="Seleccionar vehículo"
+        >
+          @for (v of vehiculosList; track v) {
+            <ion-select-option [value]="v">{{ v }}</ion-select-option>
+          }
+        </ion-select>
+
+        <ion-select
+          class="fedir-input ion-margin-top"
+          label="Unidad *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Unidad"
+          interface="action-sheet"
+        >
+          @for (u of unidadesList; track u) {
+            <ion-select-option [value]="u">{{ u }}</ion-select-option>
+          }
+        </ion-select>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="Peso entrante (kg)"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="PesoEntrante"
+          type="number"
+          inputmode="numeric"
+          placeholder=" "
+        ></ion-input>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="Peso saliente (kg)"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="PesoSaliente"
+          type="number"
+          inputmode="numeric"
+          placeholder=" "
+        ></ion-input>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="Volumen (L)"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Volumen"
+          type="number"
+          inputmode="numeric"
+          placeholder=" "
+        ></ion-input>
+
+        <ion-textarea
+          class="fedir-input ion-margin-top"
+          label="Observaciones"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Observaciones"
+          rows="3"
+          [autoGrow]="true"
+          placeholder=" "
+        ></ion-textarea>
+
+        @if (error) {
+          <ion-text color="danger" class="ion-padding-top">
+            <p>{{ error }}</p>
+          </ion-text>
+        }
+
+        <ion-button expand="block" type="submit" [disabled]="form.invalid || saving" class="ion-margin-top fedir-submit">
+          @if (saving) {
+            <ion-spinner slot="start" name="crescent"></ion-spinner>
+          }
+          Guardar pesaje
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </form>
+</ion-content>

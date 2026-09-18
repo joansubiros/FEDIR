@@ -1,35 +1,32 @@
-<ion-header><ion-toolbar class="fedir-brand-header"><ion-title>FEDIR</ion-title></ion-toolbar></ion-header>
+<ion-header><ion-toolbar class="fedir-brand-header"><ion-title>FEDIR</ion-title><span slot="end" class="fedir-brand-date">{{ today | todayDate }}</span></ion-toolbar></ion-header>
 <ion-content class="ion-padding fedir-with-footer">
-  <div class="fedir-home-hero">
-    <div class="fedir-home-user">
-      <ion-icon name="person-circle-outline"></ion-icon>
-      <span>{{ username }}</span>
+  <div class="fedir-quick-actions">
+    <div class="fedir-dash-header">
+      <span>Accesos</span>
     </div>
-    <div class="fedir-home-date">{{ today | todayDate }}</div>
+    <ion-button expand="block" class="fedir-action-button" (click)="crearPesaje()">
+      <ion-icon slot="start" name="scale-outline"></ion-icon>
+      Crear pesaje
+    </ion-button>
+    <ion-button expand="block" class="fedir-action-button" (click)="nuevoProveedor()">
+      <ion-icon slot="start" name="person-add-outline"></ion-icon>
+      Nuevo proveedor
+    </ion-button>
+    <ion-button expand="block" class="fedir-action-button fedir-action-whatsapp" (click)="enviarLinkNuevoProveedor()">
+      <ion-icon slot="start" name="logo-whatsapp"></ion-icon>
+      Enviar link nuevo proveedor
+    </ion-button>
   </div>
 
-  <div class="fedir-dash-stats">
-    <div class="fedir-stat-card fedir-stat-primary">
-      <ion-icon name="today-outline"></ion-icon>
-      <div class="fedir-stat-value">{{ rutasHoy }}</div>
-      <div class="fedir-stat-label">Rutas hoy</div>
-    </div>
-    <div class="fedir-stat-card fedir-stat-warning">
-      <ion-icon name="alert-circle-outline"></ion-icon>
-      <div class="fedir-stat-value">{{ pendientesTotales }}</div>
-      <div class="fedir-stat-label">Pendientes</div>
-    </div>
-    <div class="fedir-stat-card">
-      <ion-icon name="file-tray-stacked-outline"></ion-icon>
-      <div class="fedir-stat-value">{{ totalRutas }}</div>
-      <div class="fedir-stat-label">Total</div>
-    </div>
+  <div class="fedir-pending-summary" *ngIf="pendientesTotales > 0" aria-label="Puntos pendientes">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    <span>Puntos pendientes</span>
+    <strong>{{ pendientesTotales }}</strong>
   </div>
 
   <div class="fedir-dash-section">
     <div class="fedir-dash-header">
       <span>Rutas recientes</span>
-      <ion-button fill="clear" size="small" (click)="goRutas()">Ver todas</ion-button>
     </div>
 
     <ion-spinner *ngIf="loading$ | async" class="ion-margin"></ion-spinner>
@@ -40,11 +37,11 @@
 
     <ng-container *ngIf="recent$ | async as items">
       <ion-list class="fedir-dash-list">
-        <ion-item *ngFor="let r of items" [routerLink]="['/rutas', r.recordId]" detail>
+        <ion-item *ngFor="let r of items" [class.fedir-route-today]="isToday(r.data)" [routerLink]="['/rutas', r.recordId]" [queryParams]="{ serial: r.idRutaSerial }" detail>
           <ion-icon name="map-outline" slot="start" color="primary"></ion-icon>
           <ion-label>
-            <h2>{{ r.data | fedirDate }} · {{ r.matricula || '—' }}</h2>
-            <p>#{{ r.idRutaSerial }} · {{ r.countPunts }} paradas</p>
+            <h2><span class="fedir-route-number">Ruta {{ r.idRutaSerial }}</span> · <span class="fedir-route-date">{{ r.data | fedirDate }}</span></h2>
+            <p><span class="fedir-points-number">{{ r.countPunts }}</span> puntos · {{ r.matricula || '—' }}</p>
           </ion-label>
           <ion-badge slot="end" [color]="r.countPuntsPendents ? 'warning' : 'success'">
             {{ r.countPuntsPendents ? r.countPuntsPendents + ' pend.' : 'OK' }}

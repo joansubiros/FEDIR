@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, concatMap, forkJoin, map, of, switchMap, throwError } from 'rxjs';
 import { FileMakerService } from '../../core/services/filemaker.service';
 import type { RutaListItem, RutaDetalle, LrutaDetalle, DireccioItem } from '../../core/models/fm.models';
 
@@ -27,38 +27,113 @@ export class RutaService {
   }
 
   /** Devuelve el recordId del último registro (última ruta creada). */
-  getDetalle(recordId: string): Observable<RutaDetalle> {
+  getDetalle(recordId: string, idRutaSerial?: number): Observable<RutaDetalle> {
     return this.fm.getRecord('Phone_Ruta', recordId).pipe(
-      map(res => {
+      catchError(err => {
+        if (idRutaSerial == null) return throwError(() => err);
+        return this.fm.findRecords('Phone_Ruta', [{ Id_Ruta_serial: String(idRutaSerial) }], { limit: 1 });
+      }),
+      switchMap(res => {
+        if (res.response.data?.length || idRutaSerial == null) return of(res);
+        return this.fm.findRecords('Phone_Ruta', [{ Id_Ruta_serial: String(idRutaSerial) }], { limit: 1 });
+      }),
+      switchMap(res => {
+        if (!res.response.data?.length) throw new Error(`No se encontró la ruta ${idRutaSerial ?? recordId}`);
         const r = res.response.data[0];
         const p1 = (r.portalData?.['portal_1'] ?? []) as unknown as Record<string, unknown>[];
-        const p2 = (r.portalData?.['portal_2'] ?? []) as unknown as Record<string, unknown>[];
-        return {
-          recordId: r.recordId,
-          modId: r.modId,
-          fieldData: {
-            Id_Personal_1: String(r.fieldData['Id_Personal_1'] ?? ''),
-            Id_Personal_2: String(r.fieldData['Id_Personal_2'] ?? ''),
-            Id_Personal_3: String(r.fieldData['Id_Personal_3'] ?? ''),
-            Id_Vehicle: String(r.fieldData['Id_Vehicle'] ?? ''),
-            Data: String(r.fieldData['Data'] ?? ''),
-            Temps_Privisio_txt: String(r.fieldData['Temps_Privisio_txt'] ?? ''),
-            Km_Privisio: Number(r.fieldData['Km_Privisio'] ?? 0),
-          },
-          portalParadas: p1.map(x => ({
-            recordId: String((x as Record<string, unknown>)['recordId'] ?? ''),
-            modId: String((x as Record<string, unknown>)['modId'] ?? ''),
-            nomDireccio: String((x as Record<string, unknown>)['ruta_lruta_LDIRECCIONS::Nom_Direccio'] ?? ''),
-            tel1: String((x as Record<string, unknown>)['ruta_lruta_ldir_LCONTACTES::Tel_1'] ?? ''),
-            hDesde: String((x as Record<string, unknown>)['ruta_lruta_LDIRECCIONS::H_Desde'] ?? ''),
-            hFins: String((x as Record<string, unknown>)['ruta_lruta_LDIRECCIONS::H_Fins'] ?? ''),
+        const portalParadas = p1.map(x => ({
+          recordId: String(x['recordId'] ?? ''),
+          modId: String(x['modId'] ?? ''),
+          idLRuta: String(x['Id_LRuta'] ?? ''),
+          idLRutaSerial: Number(x['Id_LRuta_serial'] ?? x['ruta_LRUTES::Id_LRuta_serial'] ?? 0),
+          idRuta: String(x['Id_Ruta'] ?? r.fieldData['Id_Ruta'] ?? ''),
+          idLDireccio: String(x['Id_LDireccio'] ?? ''),
+          idClient: String(x['Id_Client'] ?? ''),
+          idClientPrint: String(x['ruta_lruta_CLIENTS::Id_Client_Print'] ?? ''),
+          nomEmpresa: String(x['ruta_lruta_CLIENTS::Nom_Empresa'] ?? ''),
+          direccio: String(x['ruta_lruta_LDIRECCIONS::Direccio'] ?? ''),
+          nomDireccio: String(x['ruta_lruta_LDIRECCIONS::Nom_Direccio'] ?? ''),
+          etiquetaDireccio: String(x['ruta_lruta_LDIRECCIONS::Etiqueta_Direccio'] ?? ''),
+          tel1: String(x['ruta_lruta_ldir_LCONTACTES::Tel_1'] ?? ''),
+          hDesde: String(x['ruta_lruta_LDIRECCIONS::H_Desde'] ?? ''),
+          hFins: String(x['ruta_lruta_LDIRECCIONS::H_Fins'] ?? ''),
+          latitud: this.numberOrNull(x['ruta_lruta_LDIRECCIONS::Latitud']),
+          longitud: this.numberOrNull(x['ruta_lruta_LDIRECCIONS::Longitud']),
+          flagFet: String(x['Flag_Fet'] ?? ''),
+          flagAnulat: String(x['Flag_Anulat'] ?? ''),
+        }));
+        return forkJoin(portalParadas.map(point => this.fm.getRecord('Phone_LRuta', point.recordId).pipe(
+          map(pointResponse => {
+            const fields = pointResponse.response.data[0]?.fieldData ?? {};
+            const text = (names: string[], fallback: string): string => {
+              for (const name of names) {
+                const value = String(fields[name] ?? '').trim();
+                if (value) return value;
+              }
+              return fallback;
+            };
+            return {
+              ...point,
+              idClient: text(['Id_Client', 'lruta_CLIENTS::Id_Client'], point.idClient),
+              idClientPrint: text(['lruta_CLIENTS::Id_Client_Print', 'ruta_lruta_CLIENTS::Id_Client_Print'], point.idClientPrint),
+              nomEmpresa: text(['lruta_CLIENTS::Nom_Empresa', 'ruta_lruta_CLIENTS::Nom_Empresa'], point.nomEmpresa),
+              direccio: text(['lruta_LDIRECCIONS::Direccio', 'ruta_lruta_LDIRECCIONS::Direccio'], point.direccio),
+              flagFet: String(fields['Flag_Fet'] ?? point.flagFet),
+              flagAnulat: String(fields['Flag_Anulat'] ?? point.flagAnulat),
+            };
+          }),
+          catchError(() => of(point)),
+        ))).pipe(
+          switchMap(statusPoints => forkJoin(statusPoints.map(point => {
+            if (!point.idClient && !point.idClientPrint && !point.nomEmpresa) return of(point);
+            const query = point.idClient
+              ? [{ Id_Client: point.idClient }]
+              : point.idClientPrint
+                ? [{ Id_Client_Print: point.idClientPrint }]
+                : [{ Nom_Empresa: point.nomEmpresa }];
+            return this.fm.findRecords('Clients_Llista', query, { limit: 1 }).pipe(
+              map(clientResponse => {
+                const fields = clientResponse.response.data[0]?.fieldData ?? {};
+                const value = (names: string[]): string => names.map(name => String(fields[name] ?? '').trim()).find(Boolean) ?? '';
+                const address = [
+                  value(['Direccio', 'CLIENTS::Direccio']),
+                  value(['CP', 'CLIENTS::CP']),
+                  value(['Poblacio', 'CLIENTS::Poblacio']),
+                ].filter(Boolean).join(', ');
+                return { ...point, direccio: address || point.direccio };
+              }),
+              catchError(() => of(point)),
+            );
+          }))),
+          map(statusPoints => ({
+            recordId: r.recordId,
+            modId: r.modId,
+            fieldData: {
+              Id_Ruta: String(r.fieldData['Id_Ruta'] ?? ''),
+              Id_Ruta_serial: Number(r.fieldData['Id_Ruta_serial'] ?? r.fieldData['RUTA::Id_Ruta_serial'] ?? r.fieldData['ruta_RUTA::Id_Ruta_serial'] ?? 0),
+              Nom_Personal_1: String(r.fieldData['ruta_PERSONAL1::Nom_Complert'] ?? ''),
+              Nom_Personal_2: String(r.fieldData['ruta_PERSONAL2::Nom_Complert'] ?? ''),
+              Nom_Personal_3: String(r.fieldData['ruta_PERSONAL3::Nom_Complert'] ?? ''),
+              Id_Personal_1: String(r.fieldData['Id_Personal_1'] ?? ''),
+              Id_Personal_2: String(r.fieldData['Id_Personal_2'] ?? ''),
+              Id_Personal_3: String(r.fieldData['Id_Personal_3'] ?? ''),
+              Id_Vehicle: String(r.fieldData['Id_Vehicle'] ?? ''),
+              Data: String(r.fieldData['Data'] ?? ''),
+              Temps_Privisio_txt: String(r.fieldData['Temps_Privisio_txt'] ?? ''),
+              Km_Privisio: Number(r.fieldData['Km_Privisio'] ?? 0),
+            },
+            portalParadas: statusPoints,
+            portalClientes: Array.from(new Map(
+              statusPoints
+                .filter(point => point.idClient || point.idClientPrint || point.nomEmpresa)
+                .map(point => [point.idClient || point.idClientPrint || point.nomEmpresa, {
+                  recordId: point.recordId,
+                  idClientPrint: point.idClientPrint,
+                  nomEmpresa: point.nomEmpresa,
+                }]),
+            ).values()),
           })),
-          portalClientes: p2.map(x => ({
-            recordId: String((x as Record<string, unknown>)['recordId'] ?? ''),
-            idClientPrint: String((x as Record<string, unknown>)['CLIENTS::Id_Client_Print'] ?? ''),
-            nomEmpresa: String((x as Record<string, unknown>)['CLIENTS::Nom_Empresa'] ?? ''),
-          })),
-        };
+        );
       }),
     );
   }
@@ -67,6 +142,12 @@ export class RutaService {
     return this.fm.createRecord('Phone_Ruta_New', data as Record<string, unknown>).pipe(
       map(r => ({ recordId: r.response.recordId })),
     );
+  }
+
+  private numberOrNull(value: unknown): number | null {
+    if (value === '' || value == null) return null;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : null;
   }
 }
 
@@ -79,23 +160,51 @@ export class LrutaService {
       map(res => {
         const r = res.response.data[0];
         const fd = r.fieldData as Record<string, unknown>;
+        const field = (names: string[]): unknown => {
+          for (const name of names) {
+            if (fd[name] !== undefined && fd[name] !== null && fd[name] !== '') return fd[name];
+          }
+          const suffixes = names.map(name => name.toLowerCase().split('::').pop()!);
+          const match = Object.entries(fd).find(([key, value]) => {
+            if (value === undefined || value === null || value === '') return false;
+            const normalizedKey = key.toLowerCase().split('::').pop()!;
+            return suffixes.includes(normalizedKey);
+          });
+          if (match) return match[1];
+          return '';
+        };
+        const numberField = (names: string[]): number | null => {
+          const value = field(names);
+          if (value === '') return null;
+          const number = Number(value);
+          return Number.isFinite(number) ? number : null;
+        };
         return {
           recordId: r.recordId,
           modId: r.modId,
-          quantContEntregats: fd['Quant_Cont_Entregats'] === '' || fd['Quant_Cont_Entregats'] == null ? null : Number(fd['Quant_Cont_Entregats']),
-          quantContRecollits: fd['Quant_Cont_Recollits'] === '' || fd['Quant_Cont_Recollits'] == null ? null : Number(fd['Quant_Cont_Recollits']),
-          quantKg: fd['Quant_Kg'] === '' || fd['Quant_Kg'] == null ? null : Number(fd['Quant_Kg']),
-          quantL: fd['Quant_L'] === '' || fd['Quant_L'] == null ? null : Number(fd['Quant_L']),
+          idRutaSerial: numberField([
+            'ldir_lruta_RUTA::Id_Ruta_serial',
+            'lruta_RUTA::Id_Ruta_serial',
+            'ruta_LRUTA::Id_Ruta_serial',
+            'RUTA::Id_Ruta_serial',
+            'Id_Ruta_serial',
+          ]) ?? 0,
+          quantContEntregats: numberField(['Quant_Cont_Entregats', 'lruta_LRUTES::Quant_Cont_Entregats']),
+          quantContRecollits: numberField(['Quant_Cont_Recollits', 'lruta_LRUTES::Quant_Cont_Recollits']),
+          quantKg: numberField(['Quant_Kg', 'lruta_LRUTES::Quant_Kg']),
+          quantL: numberField(['Quant_L', 'lruta_LRUTES::Quant_L']),
           preuUd: Number(fd['lruta_LDIRECCIONS::Preu_ud'] ?? 0),
-          total: Number(fd['Total'] ?? 0),
+          total: Number(field(['Total', 'lruta_LRUTES::Total']) || 0),
           tipUsUd: String(fd['lruta_LDIRECCIONS::Tipus_ud'] ?? ''),
           tipUsContenidor: String(fd['lruta_LDIRECCIONS::Tipus_Contenidor'] ?? ''),
-          quantContenidor: Number(fd['lruta_LDIRECCIONS::Quant_Contenidor'] ?? 0),
-          flagFet: String(fd['Flag_Fet'] ?? ''),
-          flagAnulat: String(fd['Flag_Anulat'] ?? ''),
-          motiuAnulat: String(fd['Motiu_Anulat'] ?? ''),
-          observacions: String(fd['Observacions'] ?? ''),
+          quantContenidor: Number(field(['lruta_LDIRECCIONS::Quant_Contenidor']) || 0),
+          flagFet: String(field(['Flag_Fet', 'lruta_LRUTES::Flag_Fet'])),
+          flagAnulat: String(field(['Flag_Anulat', 'lruta_LRUTES::Flag_Anulat'])),
+          motiuAnulat: String(field(['Motiu_Anulat', 'lruta_LRUTES::Motiu_Anulat'])),
+          observacions: String(field(['Observacions', 'lruta_LRUTES::Observacions'])),
           etiquetaDireccio: String(fd['lruta_LDIRECCIONS::Etiqueta_Direccio'] ?? ''),
+          nomDireccio: String(fd['lruta_LDIRECCIONS::Nom_Direccio'] ?? ''),
+          direccio: String(fd['lruta_LDIRECCIONS::Direccio'] ?? ''),
           frequencia: Number(fd['lruta_LDIRECCIONS::Frequencia'] ?? 0),
           tel1: String(fd['lruta_ldir_LCONTACTES::Tel_1'] ?? ''),
           nom: String(fd['lruta_ldir_LCONTACTES::Nom'] ?? ''),
@@ -106,6 +215,24 @@ export class LrutaService {
 
   update(recordId: string, fieldData: Record<string, unknown>, modId?: string): Observable<unknown> {
     return this.fm.updateRecord('Phone_LRuta', recordId, fieldData, { modId });
+  }
+
+  addPoint(idRuta: string, idLDireccio: string): Observable<{ recordId: string }> {
+    return this.fm.createRecord('Phone_LRuta', { Id_Ruta: idRuta, Id_LDireccio: idLDireccio }).pipe(
+      map(r => ({ recordId: r.response.recordId })),
+    );
+  }
+
+  updateOrder(recordId: string, serial: number, modId?: string): Observable<unknown> {
+    return this.fm.updateRecord('Phone_LRuta', recordId, { Id_LRuta_serial: serial }, { modId });
+  }
+
+  swapOrder(first: { recordId: string; serial: number; modId: string }, second: { recordId: string; serial: number; modId: string }): Observable<unknown> {
+    const temporarySerial = Math.max(first.serial, second.serial) + 1;
+    return this.updateOrder(first.recordId, temporarySerial).pipe(
+      concatMap(() => this.updateOrder(second.recordId, first.serial)),
+      concatMap(() => this.updateOrder(first.recordId, second.serial)),
+    );
   }
 }
 
@@ -121,6 +248,7 @@ export class DireccioService {
         items: res.response.data.map(r => ({
           recordId: r.recordId,
           modId: r.modId,
+          idDireccio: String(r.fieldData['Id_Direccio'] ?? ''),
           nomDireccio: String(r.fieldData['Nom_Direccio'] ?? ''),
           direccio: String(r.fieldData['Direccio'] ?? ''),
           poblacio: String(r.fieldData['Poblacio'] ?? ''),
@@ -142,6 +270,7 @@ export class DireccioService {
         items: res.response.data.map(r => ({
           recordId: r.recordId,
           modId: r.modId,
+          idDireccio: String(r.fieldData['Id_Direccio'] ?? ''),
           nomDireccio: String(r.fieldData['Nom_Direccio'] ?? ''),
           direccio: String(r.fieldData['Direccio'] ?? ''),
           poblacio: String(r.fieldData['Poblacio'] ?? ''),

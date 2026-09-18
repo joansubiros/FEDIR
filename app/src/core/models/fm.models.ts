@@ -54,6 +54,11 @@ export interface RutaDetalle {
   recordId: string;
   modId: string;
   fieldData: {
+    Id_Ruta: string;
+    Id_Ruta_serial: number;
+    Nom_Personal_1: string;
+    Nom_Personal_2: string;
+    Nom_Personal_3: string;
     Id_Personal_1: string;
     Id_Personal_2: string;
     Id_Personal_3: string;
@@ -69,15 +74,29 @@ export interface RutaDetalle {
 export interface RutaParadaPortal {
   recordId: string;
   modId: string;
+  idLRuta: string;
+  idLRutaSerial: number;
+  idRuta: string;
+  idLDireccio: string;
+  idClient: string;
+  idClientPrint: string;
+  nomEmpresa: string;
+  direccio: string;
   nomDireccio: string;
+  etiquetaDireccio: string;
   tel1: string;
   hDesde: string;
   hFins: string;
+  latitud: number | null;
+  longitud: number | null;
+  flagFet: string;
+  flagAnulat: string;
 }
 
 export interface LrutaDetalle {
   recordId: string;
   modId: string;
+  idRutaSerial: number;
   quantContEntregats: number | null;
   quantContRecollits: number | null;
   quantKg: number | null;
@@ -92,6 +111,8 @@ export interface LrutaDetalle {
   motiuAnulat: string;
   observacions: string;
   etiquetaDireccio: string;
+  nomDireccio: string;
+  direccio: string;
   frequencia: number;
   tel1: string;
   nom: string;
@@ -100,6 +121,7 @@ export interface LrutaDetalle {
 export interface DireccioItem {
   recordId: string;
   modId: string;
+  idDireccio: string;
   nomDireccio: string;
   direccio: string;
   poblacio: string;

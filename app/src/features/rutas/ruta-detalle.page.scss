@@ -1,0 +1,149 @@
+.fedir-route-content {
+  --background: #f4f6f7;
+  --color: #0f172a;
+  --padding-bottom: calc(56px + var(--ion-safe-area-bottom, 0px) + 12px);
+}
+
+.fedir-route-toolbar ion-title {
+  text-align: left;
+}
+
+.fedir-route-toolbar ion-button {
+  --color: #1084bd;
+}
+
+.fedir-route-summary {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  background: #fff;
+  border-bottom: 1px solid rgba(1, 1, 1, 0.08);
+}
+
+.fedir-route-summary span {
+  color: var(--ion-color-medium);
+}
+
+.fedir-route-actions {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 4px;
+  overflow-x: auto;
+}
+
+.fedir-route-actions ion-button {
+  flex: 0 0 auto;
+  --border-radius: 8px;
+}
+
+.fedir-route-state {
+  display: grid;
+  place-items: center;
+  gap: 10px;
+  min-height: 180px;
+  padding: 24px;
+  color: var(--ion-color-medium);
+  text-align: center;
+}
+
+.fedir-route-list {
+  margin: 0;
+  background: transparent;
+}
+
+.fedir-route-point {
+  --background: #fff;
+  --border-color: rgba(1, 1, 1, 0.08);
+  --padding-start: 10px;
+  --inner-padding-end: 4px;
+}
+
+.fedir-route-point.fedir-point-done {
+  --background: #d8f0d0;
+}
+
+.fedir-route-point.fedir-point-done::part(native) {
+  background: #d8f0d0;
+}
+
+.fedir-route-point.fedir-point-cancelled {
+  --background: #ead8f2;
+}
+
+.fedir-route-point.fedir-point-cancelled::part(native) {
+  background: #ead8f2;
+}
+
+.fedir-route-point ion-label h2 {
+  color: #0f172a;
+}
+
+.fedir-route-toolbar .fedir-route-info ion-icon {
+  font-size: 32px;
+}
+
+.fedir-point-order {
+  width: 28px;
+  color: var(--ion-color-medium);
+  font-weight: 800;
+  text-align: center;
+}
+
+.fedir-point-tools {
+  display: flex;
+  align-items: center;
+}
+
+.fedir-point-tools ion-button {
+  --padding-start: 10px;
+  --padding-end: 10px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  --color: #1084bd;
+}
+
+.fedir-point-tools ion-icon {
+  font-size: 26px;
+}
+
+.fedir-route-error {
+  padding: 0 16px;
+}
+
+.fedir-route-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(1, 1, 1, 0.35);
+}
+
+.fedir-route-modal-panel {
+  position: relative;
+  width: min(520px, 100%);
+  max-height: min(760px, 90vh);
+  overflow: auto;
+  padding: 18px 12px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 36px rgba(1, 1, 1, 0.2);
+}
+
+.fedir-route-modal-panel h2 {
+  margin: 4px 44px 12px 8px;
+}
+
+.fedir-modal-close {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  --color: #1084bd;
+}
+
+.fedir-add-point-panel ion-list {
+  background: transparent;
+}

@@ -1,7 +1,7 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
-import { BehaviorSubject, Observable, switchMap, tap, shareReplay } from 'rxjs';
-import { LrutaService } from '../../core/services/ruta.service';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { BehaviorSubject, Observable, combineLatest, switchMap, tap, map, shareReplay } from 'rxjs';
+import { LrutaService, RutaService } from '../../core/services/ruta.service';
 import { WriteQueueService } from '../../core/services/write-queue.service';
 import type { LrutaDetalle } from '../../core/models/fm.models';
 
@@ -25,14 +25,29 @@ export class ParadaDetallePage {
   observacions: string | null = null;
   private modId: string | null = null;
 
+  pageTitle$ = new BehaviorSubject<string>('');
+  displayAddress$ = new BehaviorSubject<string>('');
+
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private lruta: LrutaService,
+    private rutas: RutaService,
     private queue: WriteQueueService,
+    private cdr: ChangeDetectorRef,
   ) {
-    this.parada$ = this.route.paramMap.pipe(
-      switchMap(pm => this.lruta.get(pm.get('id')!)),
-      tap(p => {
+    this.parada$ = combineLatest([
+      this.route.paramMap,
+      this.route.queryParamMap,
+    ]).pipe(
+      switchMap(([pm, qm]) => {
+        const id = pm.get('id')!;
+        const serial = Number(qm.get('serial')) || 0;
+        return this.lruta.get(id).pipe(
+          map(p => ({ point: p, serial })),
+        );
+      }),
+      tap(({ point: p, serial }) => {
         this.modId = p.modId;
         this.quantContEntregats = p.quantContEntregats;
         this.quantContRecollits = p.quantContRecollits;
@@ -42,9 +57,31 @@ export class ParadaDetallePage {
         this.flagAnulat = p.flagAnulat;
         this.motiuAnulat = p.motiuAnulat;
         this.observacions = p.observacions;
+
+        const combined = p.nomDireccio || p.etiquetaDireccio || '';
+        const { name, address } = this.parseNameAndAddress(combined);
+        this.displayAddress$.next(p.direccio || address);
+        this.pageTitle$.next(serial ? `RUTA ${serial} ${name}` : name);
+
+        this.cdr.markForCheck();
       }),
+      map(({ point }) => point),
       shareReplay(1),
     );
+  }
+
+  private parseNameAndAddress(combined: string): { name: string; address: string } {
+    if (!combined) return { name: '', address: '' };
+
+    const addressStart = combined.search(/[A-ZÀ-Ý][a-z\u00E0-\u00FC]{2,}\s+\d/);
+    if (addressStart > 0) {
+      return {
+        name: combined.substring(0, addressStart).trim(),
+        address: combined.substring(addressStart).trim(),
+      };
+    }
+
+    return { name: combined, address: '' };
   }
 
   save(): void {
@@ -74,5 +111,21 @@ export class ParadaDetallePage {
       },
     });
   }
-}
 
+  backToRoute(): void {
+    const routeId = this.route.snapshot.queryParamMap.get('routeId');
+    const serial = Number(this.route.snapshot.queryParamMap.get('serial'));
+    if (routeId) {
+      void this.router.navigate(['/rutas', routeId], { queryParams: serial ? { serial } : undefined });
+      return;
+    }
+    if (!serial) {
+      void this.router.navigateByUrl('/rutas');
+      return;
+    }
+    this.rutas.getDetalle('', serial).subscribe({
+      next: ruta => void this.router.navigate(['/rutas', ruta.recordId], { queryParams: { serial } }),
+      error: () => void this.router.navigateByUrl('/rutas'),
+    });
+  }
+}

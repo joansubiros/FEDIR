@@ -1,12 +1,12 @@
 <ion-header><ion-toolbar class="fedir-brand-header"><ion-title>Rutas</ion-title><ion-buttons slot="end"><ion-button routerLink="/rutas/new">Nueva</ion-button></ion-buttons></ion-toolbar></ion-header>
-<ion-content class="fedir-with-footer">
+<ion-content class="fedir-with-footer fedir-rutas-list">
   <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)"><ion-refresher-content></ion-refresher-content></ion-refresher>
   <ng-container *ngIf="items$ | async as items">
     <ion-list>
-      <ion-item *ngFor="let r of items" [routerLink]="['/rutas', r.recordId]" detail>
+      <ion-item *ngFor="let r of items" [routerLink]="['/rutas', r.recordId]" [queryParams]="{ serial: r.idRutaSerial }" detail>
         <ion-label>
-          <h2>{{ r.data | fedirDate }} — {{ r.matricula || '—' }}</h2>
-          <p>#{{ r.idRutaSerial }} · {{ r.countPunts }} paradas · {{ r.countPuntsPendents }} pendientes</p>
+          <h2><span class="fedir-route-number">Ruta {{ r.idRutaSerial }}</span> · {{ r.data | fedirDate }}</h2>
+          <p><span class="fedir-points-number">{{ r.countPunts }}</span> puntos · {{ r.matricula || '—' }} · {{ r.countPuntsPendents }} pendientes</p>
         </ion-label>
         <ion-badge slot="end" [color]="r.countPuntsPendents ? 'warning' : 'success'">{{ r.countPuntsPendents ? r.countPuntsPendents + ' pend.' : 'OK' }}</ion-badge>
       </ion-item>

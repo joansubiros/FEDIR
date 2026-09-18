@@ -1,56 +1,57 @@
-.fedir-dash-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin: 8px 0 18px;
+.fedir-quick-actions {
+  margin: 0 0 18px;
 }
 
-.fedir-stat-card {
-  background: #fff;
-  border: 1px solid rgba(16, 132, 189, 0.12);
-  border-radius: 16px;
-  padding: 14px 8px 12px;
-  text-align: center;
-  box-shadow: 0 6px 18px rgba(1, 1, 1, 0.06);
+.fedir-action-button {
+  --background: #ffffff;
+  --background-hover: #f2f8fb;
+  --background-activated: #e5f2f8;
+  --color: #1f2d33;
+  --border-radius: 12px;
+  --box-shadow: 0 4px 12px rgba(1, 1, 1, 0.06);
+  --border-width: 1px;
+  --border-style: solid;
+  --border-color: rgba(16, 132, 189, 0.14);
+  height: 44px;
+  margin: 0 0 8px;
+  font-weight: 700;
+  text-transform: none;
 }
 
-.fedir-stat-card ion-icon {
-  font-size: 22px;
+.fedir-action-button ion-icon {
+  font-size: 20px;
   color: #1084bd;
-  margin-bottom: 4px;
 }
 
-.fedir-stat-value {
+.fedir-action-whatsapp ion-icon {
+  color: #20a85a;
+}
+
+.fedir-pending-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  margin: 6px 0 18px;
+  padding: 0 14px;
+  border: 1px solid rgba(16, 132, 189, 0.14);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(1, 1, 1, 0.06);
+  color: #1f2d33;
+  font-weight: 700;
+}
+
+.fedir-pending-summary ion-icon {
+  font-size: 20px;
+  color: #f5a623;
+}
+
+.fedir-pending-summary strong {
+  margin-left: auto;
+  color: #d71920;
   font-size: 24px;
   font-weight: 800;
-  color: #010101;
-  line-height: 1.1;
-}
-
-.fedir-stat-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: #6b7a80;
-  margin-top: 2px;
-}
-
-.fedir-stat-primary {
-  background: linear-gradient(135deg, #1084bd 0%, #0e74a6 100%);
-  border-color: transparent;
-}
-.fedir-stat-primary .fedir-stat-value,
-.fedir-stat-primary .fedir-stat-label {
-  color: #fff;
-}
-.fedir-stat-primary ion-icon {
-  color: #fff;
-  opacity: 0.9;
-}
-
-.fedir-stat-warning ion-icon {
-  color: #f5a623;
 }
 
 .fedir-dash-section {
@@ -83,5 +84,15 @@
   margin-bottom: 6px;
   --padding-start: 12px;
   --inner-padding-end: 10px;
+}
+
+.fedir-dash-list ion-item.fedir-route-today {
+  --background: #d9f3fc;
+  --border-color: rgba(16, 132, 189, 0.28);
+}
+
+.fedir-route-date {
+  color: #52616b;
+  font-weight: 600;
 }
 
