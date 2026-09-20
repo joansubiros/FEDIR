@@ -112,6 +112,55 @@
   padding: 0 16px;
 }
 
+/* Info Popover */
+.fedir-popover-info {
+  min-width: 260px;
+  padding: 0;
+}
+.fedir-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  border-bottom: 1px solid rgba(1, 1, 1, 0.08);
+}
+.fedir-popover-close {
+  --color: #1084bd;
+  --padding-start: 6px;
+  --padding-end: 6px;
+  margin: 0;
+  height: 32px;
+}
+.fedir-popover-body {
+  padding: 8px 12px 12px;
+}
+.fedir-popover-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+}
+.fedir-popover-row + .fedir-popover-row {
+  border-top: 1px solid rgba(1, 1, 1, 0.06);
+}
+.fedir-popover-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: #676767;
+}
+.fedir-popover-value {
+  font-size: 15px;
+  color: #0f172a;
+  text-align: right;
+  max-width: 60%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .fedir-route-modal {
   position: fixed;
   inset: 0;

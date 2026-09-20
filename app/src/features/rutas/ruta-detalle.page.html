@@ -2,7 +2,7 @@
   <ion-toolbar class="fedir-brand-header fedir-route-toolbar">
     <ion-title>RUTA {{ routeSerialParam || '...' }}</ion-title>
     <ion-buttons slot="end">
-      <ion-button class="fedir-route-info" fill="clear" (click)="showInfo = true" aria-label="Información de la ruta"><ion-icon name="information-circle-outline"></ion-icon></ion-button>
+      <ion-button id="info-button" class="fedir-route-info" fill="clear" (click)="showInfo = true" aria-label="Información de la ruta"><ion-icon name="information-circle-outline"></ion-icon></ion-button>
       <ion-button fill="clear" (click)="router.navigateByUrl('/rutas')" aria-label="Cerrar"><ion-icon name="close-outline"></ion-icon></ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -49,17 +49,37 @@
   </ion-list>
   <ion-spinner *ngIf="loading$ | async"></ion-spinner>
 
-  <div class="fedir-route-modal" *ngIf="showInfo">
-    <div class="fedir-route-modal-panel">
-      <ion-button fill="clear" class="fedir-modal-close" (click)="showInfo = false" aria-label="Cerrar información"><ion-icon name="close-outline"></ion-icon></ion-button>
-      <h2>Información de la ruta</h2>
-      <ion-item><ion-label>Fecha</ion-label><ion-note slot="end">{{ r.fieldData.Data | fedirDate }}</ion-note></ion-item>
-      <ion-item><ion-label>Vehículo</ion-label><ion-note slot="end">{{ r.fieldData.Id_Vehicle || '—' }}</ion-note></ion-item>
-      <ion-item><ion-label>Personal 1</ion-label><ion-note slot="end">{{ r.fieldData.Nom_Personal_1 || r.fieldData.Id_Personal_1 || '—' }}</ion-note></ion-item>
-      <ion-item><ion-label>Personal 2</ion-label><ion-note slot="end">{{ r.fieldData.Nom_Personal_2 || r.fieldData.Id_Personal_2 || '—' }}</ion-note></ion-item>
-      <ion-item><ion-label>Personal 3</ion-label><ion-note slot="end">{{ r.fieldData.Nom_Personal_3 || r.fieldData.Id_Personal_3 || '—' }}</ion-note></ion-item>
-    </div>
-  </div>
+  <!-- INFO POPOVER -->
+  <ion-popover [isOpen]="showInfo" (didDismiss)="showInfo = false" [showBackdrop]="false">
+    <ng-template>
+      <div class="fedir-popover-info">
+        <div class="fedir-popover-header">
+          <span>Información Ruta</span>
+          <ion-button fill="clear" class="fedir-popover-close" (click)="showInfo = false" aria-label="Cerrar información">
+            <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+        </div>
+        <div class="fedir-popover-body">
+          <div class="fedir-popover-row">
+            <span class="fedir-popover-label">Vehículo</span>
+            <span class="fedir-popover-value">{{ r.fieldData.Id_Vehicle || '—' }}</span>
+          </div>
+          <div class="fedir-popover-row">
+            <span class="fedir-popover-label">Personal 1</span>
+            <span class="fedir-popover-value">{{ r.fieldData.Nom_Personal_1 || r.fieldData.Id_Personal_1 || '—' }}</span>
+          </div>
+          <div class="fedir-popover-row">
+            <span class="fedir-popover-label">Personal 2</span>
+            <span class="fedir-popover-value">{{ r.fieldData.Nom_Personal_2 || r.fieldData.Id_Personal_2 || '—' }}</span>
+          </div>
+          <div class="fedir-popover-row">
+            <span class="fedir-popover-label">Personal 3</span>
+            <span class="fedir-popover-value">{{ r.fieldData.Nom_Personal_3 || r.fieldData.Id_Personal_3 || '—' }}</span>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </ion-popover>
 
   <div class="fedir-route-modal" *ngIf="showAddPoint">
     <div class="fedir-route-modal-panel fedir-add-point-panel">

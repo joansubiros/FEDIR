@@ -1,30 +1,175 @@
 <ion-header>
   <ion-toolbar class="fedir-brand-header fedir-point-toolbar">
-    <ion-buttons slot="start"><ion-button fill="clear" (click)="backToRoute()" aria-label="Volver a la ruta"><ion-icon name="arrow-back-outline"></ion-icon></ion-button></ion-buttons>
+    <ion-buttons slot="start">
+      <ion-button fill="clear" (click)="backToRoute()" aria-label="Volver a la ruta">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
     <ion-title>{{ pageTitle$ | async }}</ion-title>
   </ion-toolbar>
 </ion-header>
+
 <ion-content *ngIf="parada$ | async as p" class="ion-padding fedir-with-footer fedir-point-content">
   <p class="fedir-point-address">{{ displayAddress$ | async }}</p>
-  <ion-item><ion-input label="Entregados" type="number" [(ngModel)]="quantContEntregats"></ion-input></ion-item>
-  <ion-item><ion-input label="Recogidos" type="number" [(ngModel)]="quantContRecollits"></ion-input></ion-item>
-  <ion-item><ion-input label="Kg" type="number" [(ngModel)]="quantKg"></ion-input></ion-item>
-  <ion-item><ion-input label="Litros" type="number" [(ngModel)]="quantL"></ion-input></ion-item>
-  <ion-item><ion-input label="Observaciones" [(ngModel)]="observacions"></ion-input></ion-item>
-  <ion-item><ion-input label="Motivo anulado" [(ngModel)]="motiuAnulat"></ion-input></ion-item>
-  <ion-item>
-    <ion-select label="Estado" [(ngModel)]="flagFet"><ion-select-option value="">Pendiente</ion-select-option><ion-select-option value="1">Hecho</ion-select-option></ion-select>
-  </ion-item>
-  <ion-item>
-    <ion-select label="Anulado" [(ngModel)]="flagAnulat"><ion-select-option value="">No</ion-select-option><ion-select-option value="1">Sí</ion-select-option></ion-select>
-  </ion-item>
+
+  <ion-list class="fedir-point-form-list" lines="full">
+    <!-- Unidad -->
+    <ion-item>
+      <ion-select label="Unidad" interface="popover" [(ngModel)]="tipUsUd" (ionChange)="onUnidadChange()">
+        <ion-select-option value="Litros">Litros</ion-select-option>
+        <ion-select-option value="Kilogramos">Kilogramos</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- Tachos Entregados -->
+    <ion-item>
+      <ion-select
+        label="Tachos Entregados"
+        interface="popover"
+        [(ngModel)]="quantContEntregats"
+        placeholder="0">
+        <ion-select-option [value]="0">0</ion-select-option>
+        <ion-select-option *ngFor="let n of tachosOptions" [value]="n">{{ n }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- Tachos Recogidos -->
+    <ion-item>
+      <ion-select
+        label="Tachos Recogidos"
+        interface="popover"
+        [(ngModel)]="quantContRecollits"
+        placeholder="0">
+        <ion-select-option [value]="0">0</ion-select-option>
+        <ion-select-option *ngFor="let n of tachosOptions" [value]="n">{{ n }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- Tachos Que Tiene -->
+    <ion-item>
+      <ion-select
+        label="Tachos Que Tiene"
+        interface="popover"
+        [(ngModel)]="quantContenidor"
+        placeholder="0">
+        <ion-select-option [value]="0">0</ion-select-option>
+        <ion-select-option *ngFor="let n of tachosOptions" [value]="n">{{ n }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- Tipo Tacho -->
+    <ion-item>
+      <ion-select label="Tipo Tacho" interface="popover" [(ngModel)]="tipUsContenidor">
+        <ion-select-option value="50">50</ion-select-option>
+        <ion-select-option value="100">100</ion-select-option>
+        <ion-select-option value="150">150</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- Cantidad Recogida -->
+    <ion-item>
+      <ion-input
+        label="Cantidad Recogida"
+        type="number"
+        min="0"
+        [value]="cantidadRecogida"
+        [(ngModel)]="cantidadRecogida"
+        (ionInput)="onCantidadChange()">
+      </ion-input>
+    </ion-item>
+
+    <!-- Realizado & Punto Anulado checkboxes -->
+    <div class="fedir-point-status-row">
+      <ion-item lines="none" class="fedir-status-checkbox-item fedir-realizado-item">
+        <ion-checkbox
+          justify="start"
+          labelPlacement="end"
+          [checked]="flagFet === '1'"
+          (ionChange)="onRealizadoChange($event)">
+          <span class="fedir-realizado-label">Realizado</span>
+        </ion-checkbox>
+      </ion-item>
+
+      <ion-item lines="none" class="fedir-status-checkbox-item fedir-anulado-item">
+        <ion-checkbox
+          justify="start"
+          labelPlacement="end"
+          [checked]="flagAnulat === '1'"
+          (ionChange)="onAnuladoChange($event)">
+          <span class="fedir-anulado-label">Punto Anulado</span>
+        </ion-checkbox>
+      </ion-item>
+    </div>
+
+    <!-- Motivo Anul. (aparece si Punto Anulado está marcado) -->
+    <ion-item *ngIf="flagAnulat === '1'" class="fedir-motivo-item">
+      <ion-select
+        label="Motivo Anul."
+        interface="popover"
+        [(ngModel)]="motiuAnulat"
+        (ionChange)="onMotivoAnulatChange()">
+        <ion-select-option value="Tacho Robado">Tacho Robado</ion-select-option>
+        <ion-select-option value="Cliente Ausente">Cliente Ausente</ion-select-option>
+        <ion-select-option value="Sin Aceite">Sin Aceite</ion-select-option>
+        <ion-select-option value="Horario Incompatible">Horario Incompatible</ion-select-option>
+        <ion-select-option value="Falta De Tiempo">Falta De Tiempo</ion-select-option>
+      </ion-select>
+    </ion-item>
+
+    <!-- Botón Aviso NO Realizado (WhatsApp) -->
+    <div *ngIf="flagAnulat === '1'" class="fedir-aviso-container">
+      <ion-button
+        expand="block"
+        fill="solid"
+        class="fedir-btn-aviso-whatsapp"
+        (click)="sendAvisoNoRealizado()"
+        [disabled]="sendingAviso">
+        <ion-icon slot="start" name="logo-whatsapp"></ion-icon>
+        <ion-spinner *ngIf="sendingAviso" slot="start" name="crescent"></ion-spinner>
+        Aviso NO Realizado
+      </ion-button>
+      <ion-text *ngIf="avisoStatus" [color]="avisoSuccess ? 'success' : 'danger'">
+        <p class="fedir-aviso-status">{{ avisoStatus }}</p>
+      </ion-text>
+    </div>
+
+    <!-- WhatsApp -->
+    <ion-item>
+      <ion-input
+        label="WhatsApp"
+        type="tel"
+        [(ngModel)]="tel1"
+        (ionBlur)="formatPhoneOnBlur()"
+        placeholder="+54 9 11 1234-5678">
+      </ion-input>
+    </ion-item>
+
+    <!-- Nombre -->
+    <ion-item>
+      <ion-input label="Nombre" [(ngModel)]="nom" placeholder="Nombre"></ion-input>
+    </ion-item>
+
+    <!-- Observaciones -->
+    <ion-item class="fedir-observaciones-item">
+      <ion-textarea
+        label="Observaciones"
+        labelPlacement="stacked"
+        [autoGrow]="true"
+        rows="4"
+        [(ngModel)]="observacions"
+        placeholder="Observaciones">
+      </ion-textarea>
+    </ion-item>
+  </ion-list>
+
   @if (error) {
-    <ion-text color="danger"><p>{{ error }}</p></ion-text>
+    <ion-text color="danger"><p class="fedir-save-error">{{ error }}</p></ion-text>
   }
+
   <ion-button expand="block" (click)="save()" [disabled]="saving" class="ion-margin-top fedir-submit">
     @if (saving) {
       <ion-spinner slot="start" name="crescent"></ion-spinner>
     }
-    Guardar
+    GUARDAR
   </ion-button>
 </ion-content>

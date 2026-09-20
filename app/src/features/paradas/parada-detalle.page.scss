@@ -1,0 +1,178 @@
+:host {
+  display: block;
+}
+
+.fedir-point-toolbar ion-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.fedir-point-content {
+  --background: #f8fafc;
+}
+
+.fedir-point-address {
+  margin: 4px 0 16px;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #334155;
+  background: #ffffff;
+  border-radius: 8px;
+  border-left: 4px solid #1084bd;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.fedir-point-form-list {
+  background: transparent;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  padding: 0;
+
+  ion-item {
+    --background: #ffffff;
+    --min-height: 52px;
+    --padding-start: 14px;
+    --padding-end: 14px;
+    --border-color: #e2e8f0;
+    font-size: 0.95rem;
+    color: #1e293b;
+    margin-bottom: 6px;
+    border-radius: 6px;
+  }
+}
+
+.fedir-point-status-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+
+  .fedir-status-checkbox-item {
+    flex: 1;
+    --background: #ffffff;
+    border-radius: 6px;
+    margin-bottom: 0;
+
+    ion-checkbox {
+      width: 100%;
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+  }
+
+  .fedir-realizado-item {
+    ion-checkbox {
+      --checkbox-background-checked: #558e28;
+      --border-color-checked: #558e28;
+    }
+    .fedir-realizado-label {
+      color: #558e28;
+      font-weight: 700;
+    }
+  }
+
+  .fedir-anulado-item {
+    ion-checkbox {
+      --checkbox-background-checked: #8500af;
+      --border-color-checked: #8500af;
+    }
+    .fedir-anulado-label {
+      color: #8500af;
+      font-weight: 700;
+    }
+  }
+}
+
+.fedir-motivo-item {
+  --background: #faf5ff !important;
+  border-left: 4px solid #8500af;
+
+  ion-select {
+    color: #8500af;
+    font-weight: 600;
+  }
+}
+
+.fedir-aviso-container {
+  margin: 10px 0 14px;
+}
+
+.fedir-btn-aviso-whatsapp {
+  --background: #cbf0ff;
+  --color: #0369a1;
+  --background-hover: #bae6fd;
+  --background-activated: #7dd3fc;
+  --border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  margin: 4px 0;
+
+  ion-icon {
+    font-size: 1.3rem;
+    color: #25d366;
+  }
+}
+
+.fedir-aviso-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin: 4px 4px 8px;
+  text-align: center;
+}
+
+.fedir-observaciones-item {
+  ion-textarea {
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+  }
+}
+
+.fedir-save-error {
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: center;
+  margin: 10px 0;
+}
+
+.fedir-submit {
+  --background: #1084bd;
+  --border-radius: 8px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  font-size: 1rem;
+  height: 48px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .fedir-point-content {
+    --background: #0f172a;
+  }
+
+  .fedir-point-address {
+    background: #1e293b;
+    color: #e2e8f0;
+    border-left-color: #38bdf8;
+  }
+
+  .fedir-point-form-list ion-item {
+    --background: #1e293b;
+    --border-color: #334155;
+    color: #f1f5f9;
+  }
+
+  .fedir-point-status-row .fedir-status-checkbox-item {
+    --background: #1e293b;
+  }
+
+  .fedir-motivo-item {
+    --background: #2e1065 !important;
+  }
+
+  .fedir-btn-aviso-whatsapp {
+    --background: #0c4a6e;
+    --color: #e0f2fe;
+  }
+}
