@@ -75,15 +75,41 @@
   letter-spacing: 0.02em;
 }
 
+/* Cabeceras y barras de herramientas FEDIR */
+ion-header ion-toolbar {
+  --background: #1084bd;
+  --color: #ffffff;
+  --border-color: rgba(0, 0, 0, 0.08);
+  color: #ffffff;
+
+  ion-title {
+    color: #ffffff;
+  }
+
+  ion-button {
+    --color: #ffffff;
+    color: #ffffff;
+  }
+
+  ion-back-button {
+    --color: #ffffff;
+    color: #ffffff;
+  }
+
+  ion-icon {
+    color: #ffffff;
+  }
+}
+
 .fedir-brand-header {
-  --background: #ffffff;
-  --color: #010101;
-  border-bottom: 3px solid #1084bd;
+  --background: #1084bd;
+  --color: #ffffff;
 }
 
 .fedir-brand-header ion-title {
   font-weight: 800;
   letter-spacing: 0.04em;
+  color: #ffffff;
 }
 
 .fedir-point-toolbar ion-title {
@@ -91,7 +117,19 @@
 }
 
 .fedir-point-toolbar ion-button {
-  --color: #1084bd;
+  --color: #ffffff;
+  color: #ffffff;
+}
+
+ion-header ion-toolbar ion-searchbar {
+  --background: rgba(255, 255, 255, 0.95);
+  --color: #0f172a;
+  --placeholder-color: #64748b;
+  --icon-color: #1084bd;
+  --clear-button-color: #64748b;
+  --border-radius: 10px;
+  padding-top: 0;
+  padding-bottom: 6px;
 }
 
 .fedir-route-number {
@@ -131,7 +169,7 @@
 
 .fedir-brand-date {
   padding: 0 16px;
-  color: var(--ion-color-medium);
+  color: rgba(255, 255, 255, 0.92);
   font-size: 12px;
   font-weight: 600;
   text-transform: capitalize;

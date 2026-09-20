@@ -1,4 +1,14 @@
-<ion-header><ion-toolbar class="fedir-brand-header"><ion-title>FEDIR</ion-title><span slot="end" class="fedir-brand-date">{{ today | todayDate }}</span></ion-toolbar></ion-header>
+<ion-header>
+  <ion-toolbar class="fedir-brand-header">
+    <ion-title>FEDIR</ion-title>
+    <ion-buttons slot="end">
+      <span class="fedir-brand-date">{{ today | todayDate }}</span>
+      <ion-button fill="clear" (click)="logout()" aria-label="Cerrar sesión" title="Salir">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
 <ion-content class="ion-padding fedir-with-footer">
   <div class="fedir-quick-actions">
     <div class="fedir-dash-header">

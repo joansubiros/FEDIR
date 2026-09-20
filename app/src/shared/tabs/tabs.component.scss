@@ -5,8 +5,8 @@
   bottom: 0;
   z-index: 999;
   display: block;
-  background: #fff;
-  border-top: 1px solid rgba(16, 132, 189, 0.14);
+  background: #1084bd;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
   padding-bottom: var(--ion-safe-area-bottom, 0);
 }
 
@@ -14,26 +14,34 @@
   display: flex;
   width: 100%;
   height: 56px;
-  background: #fff;
+  background: #1084bd;
   align-items: stretch;
 }
 
 .fedir-tab-inner ion-tab-button {
   flex: 1;
-  --color: #6b7a80;
-  --color-selected: #1084bd;
-  --ripple-color: rgba(16, 132, 189, 0.12);
-  --background: #fff;
+  --color: rgba(255, 255, 255, 0.72);
+  --color-selected: #ffffff;
+  --ripple-color: rgba(255, 255, 255, 0.2);
+  --background: #1084bd;
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .fedir-tab-inner ion-tab-button.tab-active {
-  --color: #1084bd;
-  --color-selected: #1084bd;
+  --color: #ffffff;
+  --color-selected: #ffffff;
+  color: #ffffff;
+}
+
+.fedir-tab-inner ion-tab-button ion-icon,
+.fedir-tab-inner ion-tab-button ion-label {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .fedir-tab-inner ion-tab-button.tab-active ion-icon,
 .fedir-tab-inner ion-tab-button.tab-active ion-label {
-  color: #1084bd;
+  color: #ffffff;
+  font-weight: 800;
 }
 
 .fedir-tab-inner ion-icon {

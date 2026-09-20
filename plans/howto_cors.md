@@ -98,6 +98,47 @@ sudo launchctl stop com.filemaker.fms
 sudo launchctl start com.filemaker.fms
 ```
 
+---
+
+## Solution for FileMaker Server on Windows (IIS)
+
+On Windows Server, FileMaker Server uses **IIS** and the configuration lives in:
+`C:\Program Files\FileMaker\FileMaker Server\HTTPServer\conf\web.config`
+
+### 1. Add CORS Preflight rule in `<rewrite><rules>`
+
+```xml
+<rule name="CORS Preflight" stopProcessing="true">
+  <match url=".*" />
+  <conditions>
+    <add input="{REQUEST_METHOD}" pattern="^OPTIONS$" />
+  </conditions>
+  <action type="CustomResponse" statusCode="200" statusReason="OK" statusDescription="Preflight OK" />
+</rule>
+```
+
+### 2. Configure `<httpProtocol><customHeaders>`
+
+```xml
+<httpProtocol>
+  <customHeaders>
+    <add name="X-Frame-Options" value="SAMEORIGIN" />
+    <add name="X-XSS-Protection" value="1; mode=block" />
+    <add name="Access-Control-Allow-Origin" value="https://fedir-app.web.app" />
+    <add name="Access-Control-Allow-Headers" value="Origin, X-Requested-With, Content-Type, Accept, Authorization, odata-maxversion, odata-version, Prefer, OData-MaxVersion, OData-Version" />
+    <add name="Access-Control-Allow-Methods" value="GET, POST, PUT, PATCH, DELETE, OPTIONS" />
+    <add name="Access-Control-Allow-Credentials" value="true" />
+  </customHeaders>
+</httpProtocol>
+```
+
+### 3. Restart IIS (as Administrator)
+
+```powershell
+iisreset
+```
+
+
 Wait ~10 seconds for FMS to fully start.
 
 ## Verify

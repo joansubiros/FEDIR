@@ -1,8 +1,10 @@
 import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { AlertController } from '@ionic/angular';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { catchError, finalize, map } from 'rxjs/operators';
 import { RutaService } from '../../core/services/ruta.service';
+import { FileMakerService } from '../../core/services/filemaker.service';
 import type { RutaListItem } from '../../core/models/fm.models';
 
 @Component({
@@ -26,6 +28,8 @@ export class HomePage implements OnInit {
   constructor(
     private router: Router,
     private rutas: RutaService,
+    private fm: FileMakerService,
+    private alertCtrl: AlertController,
   ) {}
 
   ngOnInit(): void {
@@ -72,6 +76,31 @@ export class HomePage implements OnInit {
 
     const message = `Hola, aquí tiene su enlace para rellenar el formulario: ${this.proveedorUrl} .Saludos`;
     window.location.href = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
+  }
+
+  async logout(): Promise<void> {
+    const alert = await this.alertCtrl.create({
+      header: 'Cerrar sesión',
+      message: '¿Estás seguro de que quieres salir de la aplicación?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Salir',
+          role: 'destructive',
+          handler: () => {
+            this.fm.logout().subscribe({
+              next: () => {
+                void this.router.navigateByUrl('/login');
+              },
+              error: () => {
+                void this.router.navigateByUrl('/login');
+              },
+            });
+          },
+        },
+      ],
+    });
+    await alert.present();
   }
 
   refrescar(): void {
