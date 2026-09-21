@@ -80,7 +80,8 @@
 .fedir-dash-list ion-item {
   --border-radius: 12px;
   --background: #fff;
-  --border-color: rgba(16, 132, 189, 0.1);
+  --border-color: rgba(1, 1, 1, 0.18);
+  --border-width: 0 0 2px 0;
   margin-bottom: 6px;
   --padding-start: 12px;
   --inner-padding-end: 10px;
@@ -88,7 +89,7 @@
 
 .fedir-dash-list ion-item.fedir-route-today {
   --background: #d9f3fc;
-  --border-color: rgba(16, 132, 189, 0.28);
+  --border-color: rgba(16, 132, 189, 0.4);
 }
 
 .fedir-route-date {

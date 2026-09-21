@@ -40,6 +40,16 @@ export interface FmCreateResponse {
   messages: FmError[];
 }
 
+export interface FmScriptResponse {
+  response: {
+    dataInfo: FmDataInfo;
+    data: FmRecord[];
+    scriptResult: string | null;
+    scriptError: string | null;
+  };
+  messages: FmError[];
+}
+
 export interface RutaListItem {
   recordId: string;
   modId: string;

@@ -16,6 +16,7 @@ import type { RutaListItem } from '../../core/models/fm.models';
 })
 export class HomePage implements OnInit {
   private readonly proveedorUrl = 'https://n8n.fmsuit.net/webhook/proveedor';
+  private readonly proveedorRoute = '/proveedores/nuevo';
   today = new Date();
   loading$ = new BehaviorSubject<boolean>(false);
   error$ = new BehaviorSubject<string | null>(null);
@@ -61,7 +62,7 @@ export class HomePage implements OnInit {
   }
 
   nuevoProveedor(): void {
-    window.open(this.proveedorUrl, '_blank', 'noopener,noreferrer');
+    void this.router.navigateByUrl(this.proveedorRoute);
   }
 
   enviarLinkNuevoProveedor(): void {

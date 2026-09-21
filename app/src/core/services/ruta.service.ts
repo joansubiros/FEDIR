@@ -241,7 +241,16 @@ export class DireccioService {
   constructor(private fm: FileMakerService) {}
 
   search(query: string, limit = 50, offset = 0): Observable<{ items: DireccioItem[]; total: number }> {
-    const q: Record<string, unknown>[] = query ? [{ 'LDIRECCIONS::Nom_Direccio': `*${query}*` }] : [{}];
+    const q: Record<string, unknown>[] = query
+      ? [
+          { 'Nom_Direccio': `*${query}*` },
+          { 'Direccio': `*${query}*` },
+          { 'Poblacio': `*${query}*` },
+          { 'Barri': `*${query}*` },
+          { 'Provincia': `*${query}*` },
+          { 'Busca': `*${query}*` },
+        ]
+      : [{}];
     return this.fm.findRecords('Phone_Ldir_Llista', q, { limit, offset }).pipe(
       map(res => ({
         total: res.response.dataInfo.foundCount,

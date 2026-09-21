@@ -4,7 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { map, tap, switchMap, catchError, timeout } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { SessionService } from './session.service';
-import type { FmLoginResponse, FmFindResponse, FmSingleResponse, FmCreateResponse, FmRecord } from '../models/fm.models';
+import type { FmLoginResponse, FmFindResponse, FmSingleResponse, FmCreateResponse, FmScriptResponse, FmRecord } from '../models/fm.models';
 
 @Injectable({ providedIn: 'root' })
 export class FileMakerService {
@@ -154,10 +154,10 @@ export class FileMakerService {
     return this.http.delete(url);
   }
 
-  executeScript(layout: string, script: string, scriptParam?: string): Observable<FmFindResponse> {
+  executeScript(layout: string, script: string, scriptParam?: string): Observable<FmScriptResponse> {
     const qs = scriptParam != null ? `?script=${encodeURIComponent(script)}&script.param=${encodeURIComponent(scriptParam)}` : `?script=${encodeURIComponent(script)}`;
     const url = `${this.baseUrl}/layouts/${encodeURIComponent(layout)}/records${qs}`;
-    return this.http.get<FmFindResponse>(url);
+    return this.http.get<FmScriptResponse>(url);
   }
 
   ensureAuth<T>(request: () => Observable<T>): Observable<T> {

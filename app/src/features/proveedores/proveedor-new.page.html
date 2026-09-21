@@ -1,0 +1,238 @@
+<ion-header>
+  <ion-toolbar class="fedir-brand-header">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Nuevo Proveedor</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding fedir-with-footer">
+  <form [formGroup]="form" (ngSubmit)="save()" novalidate>
+    <ion-card class="fedir-card proveedor-card">
+      <ion-card-content class="fedir-login-card-content">
+
+        <ion-text color="medium" class="section-label">
+          <h2>Datos Fiscales y Persona de Contacto</h2>
+        </ion-text>
+
+        <ion-input
+          class="fedir-input"
+          label="Razón Social *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Razón Social"
+          placeholder=" "
+        ></ion-input>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="Nombre Comercial *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Nombre Comercial"
+          placeholder=" "
+        ></ion-input>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="CUIT (11 números) *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="CUIT"
+          type="tel"
+          inputmode="numeric"
+          placeholder="Sin guiones"
+        ></ion-input>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="Persona de Contacto *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Persona Contacto"
+          placeholder=" "
+        ></ion-input>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="E-mail *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Email"
+          type="email"
+          placeholder=" "
+        ></ion-input>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="Tel. WhatsApp *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Teléfono 1"
+          type="tel"
+          inputmode="numeric"
+          placeholder="Ej: +54 9 11 2345-6789"
+        ></ion-input>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="Teléfono 2"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Teléfono 2"
+          type="tel"
+          inputmode="numeric"
+          placeholder="Opcional"
+        ></ion-input>
+
+        <ion-text color="medium" class="section-label">
+          <h2>Ubicación y Código Postal</h2>
+        </ion-text>
+
+        <ion-select
+          class="fedir-input ion-margin-top"
+          label="Provincia *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Provincia"
+          interface="action-sheet"
+          placeholder="Seleccionar"
+        >
+          <ion-select-option value="" disabled>Provincia...</ion-select-option>
+          @for (p of provinciasList; track p) {
+            <ion-select-option [value]="p">{{ p }}</ion-select-option>
+          }
+        </ion-select>
+
+        <ion-select
+          class="fedir-input ion-margin-top"
+          label="Población *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Población"
+          interface="action-sheet"
+          [disabled]="!form.get('Provincia')?.value"
+          placeholder="Seleccionar"
+        >
+          <ion-select-option value="" disabled>Población...</ion-select-option>
+          @for (p of poblacionesList; track p) {
+            <ion-select-option [value]="p">{{ p }}</ion-select-option>
+          }
+        </ion-select>
+
+        <ion-select
+          class="fedir-input ion-margin-top"
+          label="Barrio / Localidad *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Barrio"
+          interface="action-sheet"
+          [disabled]="!form.get('Población')?.value"
+          placeholder="Seleccionar"
+        >
+          <ion-select-option value="" disabled>Barrio...</ion-select-option>
+          @for (b of barriosList; track b) {
+            <ion-select-option [value]="b">{{ b }}</ion-select-option>
+          }
+        </ion-select>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="Dirección (Calle y altura) *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Dirección"
+          placeholder=" "
+        ></ion-input>
+
+        <ion-input
+          class="fedir-input ion-margin-top"
+          label="CP (Arg) *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="CP"
+          placeholder="Ej: 1002 o C1425ABC"
+        ></ion-input>
+
+        <ion-text color="medium" class="section-label">
+          <h2>Horario de Atención</h2>
+        </ion-text>
+
+        <ion-select
+          class="fedir-input ion-margin-top"
+          label="Desde *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Horario Desde"
+          interface="action-sheet"
+          placeholder="Seleccionar"
+        >
+          <ion-select-option value="" disabled>Hora...</ion-select-option>
+          @for (h of horasList; track h) {
+            <ion-select-option [value]="h">{{ h }}</ion-select-option>
+          }
+        </ion-select>
+
+        <ion-select
+          class="fedir-input ion-margin-top"
+          label="Hasta *"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Horario Hasta"
+          interface="action-sheet"
+          placeholder="Seleccionar"
+        >
+          <ion-select-option value="" disabled>Hora...</ion-select-option>
+          @for (h of horasList; track h) {
+            <ion-select-option [value]="h">{{ h }}</ion-select-option>
+          }
+        </ion-select>
+
+        <ion-text color="medium" class="section-label">
+          <h2>Días Abierto (Mínimo 1) *</h2>
+        </ion-text>
+
+        @for (dia of diasList; track dia) {
+          <ion-item lines="none" class="dia-checkbox">
+            <ion-label>{{ dia }}</ion-label>
+            <ion-checkbox
+              slot="end"
+              [checked]="diasSeleccionados.includes(dia)"
+              (ionChange)="toggleDia(dia)"
+            ></ion-checkbox>
+          </ion-item>
+        }
+
+        <ion-text color="medium" class="section-label">
+          <h2>Observaciones</h2>
+        </ion-text>
+
+        <ion-textarea
+          class="fedir-input ion-margin-top"
+          label="Observaciones"
+          labelPlacement="floating"
+          fill="outline"
+          formControlName="Observaciones"
+          rows="3"
+          [autoGrow]="true"
+          placeholder=" "
+        ></ion-textarea>
+
+        @if (error) {
+          <ion-text color="danger" class="ion-padding-top">
+            <p>{{ error }}</p>
+          </ion-text>
+        }
+
+        <ion-button expand="block" type="submit" [disabled]="form.invalid || saving" class="ion-margin-top fedir-submit">
+          @if (saving) {
+            <ion-spinner slot="start" name="crescent"></ion-spinner>
+          }
+          Registrar en FEDIR
+        </ion-button>
+
+      </ion-card-content>
+    </ion-card>
+  </form>
+</ion-content>

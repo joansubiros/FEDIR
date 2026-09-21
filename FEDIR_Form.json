@@ -1,0 +1,279 @@
+{
+  "name": "FEDIR_Form",
+  "nodes": [
+    {
+      "parameters": {
+        "action": "performscript",
+        "layout": "PROVEIDORS",
+        "script": "Prov_FormWeb_PSOS",
+        "scriptParam": "={{ JSON.stringify($json.body).replace(/&/g, '\\\\u0026') }}"
+      },
+      "type": "n8n-nodes-base.filemaker",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        64
+      ],
+      "id": "5350d623-e4e3-4c51-81c7-fa4b74463b6b",
+      "name": "FileMaker",
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 2,
+      "notesInFlow": false,
+      "credentials": {
+        "fileMaker": {
+          "id": "c7WEP38QsJUsrwZT",
+          "name": "FEDIR"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "form_fedir",
+        "responseMode": "responseNode",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -672,
+        64
+      ],
+      "id": "8ffea435-4f21-4cd1-9a39-21071e9ac259",
+      "name": "Webhook2",
+      "webhookId": "3c8d6b2e-fc07-4464-a401-0e4e18eb7f74",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "path": "proveedor",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -672,
+        -176
+      ],
+      "id": "5388d2a6-afc7-4dff-9a4c-a01135d9742b",
+      "name": "Webhook1",
+      "webhookId": "4ad0e3c6-738d-470d-b5d5-122ca7815695",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"es\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Nuevo Proveedor - FEDIR</title>\n    <script src=\"https://cdn.tailwindcss.com\"></script>\n    <style>\n        body { background-color: #f0f2f5; font-family: 'Segoe UI', sans-serif; }\n        .form-card { max-width: 950px; margin: 20px auto; background: white; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); padding: 30px; border: 1px solid #e1e4e8; }\n        .main-title { text-align: center; color: #1a202c; font-weight: 900 !important; letter-spacing: -2px; font-size: 34px; margin-bottom: 10px; }\n        @media (min-width: 768px) { .form-card { margin: 40px auto; padding: 50px; } .main-title { font-size: 62px !important; } }\n        .section-title { font-size: 18px; font-weight: 700; color: #2d3748; margin: 30px 0 15px 0; border-bottom: 3px solid #3182ce; padding-bottom: 5px; }\n        .label { display: block; font-size: 14px; color: #4a5568; margin-bottom: 6px; font-weight: 600; }\n        .required { color: #e53e3e; margin-left: 3px; }\n        .input, .select, .textarea { width: 100%; padding: 12px 15px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 15px; margin-bottom: 18px; outline: none; background: #fff; }\n        .input:focus, .select:focus { border-color: #3182ce; box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15); }\n        .checkbox-group { display: grid; grid-template-cols: repeat(auto-fill, minmax(115px, 1fr)); gap: 10px; background: #f8fafc; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; }\n        .btn { width: 100%; background: #2b6cb0; color: white; padding: 20px; border-radius: 8px; font-weight: 800; font-size: 22px; margin-top: 30px; border: none; cursor: pointer; text-transform: uppercase; }\n        .btn:disabled { background: #cbd5e0; cursor: not-allowed; }\n    </style>\n</head>\n<body>\n    <div id=\"container-fedir\">\n        <div class=\"form-card\">\n            <h1 class=\"main-title\">Nuevo Proveedor FEDIR</h1>\n            <form id=\"fedirForm\">\n                <div class=\"section-title\">Datos Fiscales y Persona de Contacto</div>\n                <div class=\"grid grid-cols-1 md:grid-cols-2 gap-x-6\">\n                    <div><label class=\"label\">Razón Social<span class=\"required\">*</span></label><input type=\"text\" name=\"Razón Social\" required class=\"input\"></div>\n                    <div><label class=\"label\">Nombre Comercial<span class=\"required\">*</span></label><input type=\"text\" name=\"Nombre Comercial\" required class=\"input\"></div>\n                    <div><label class=\"label\">CUIT (11 números)<span class=\"required\">*</span></label><input type=\"tel\" id=\"cuit\" name=\"CUIT\" pattern=\"[0-9]*\" inputmode=\"numeric\" placeholder=\"Sin guiones\" required class=\"input\"></div>\n                    <div><label class=\"label\">Persona de Contacto<span class=\"required\">*</span></label><input type=\"text\" name=\"Persona Contacto\" required class=\"input\"></div>\n                </div>\n\n                <div class=\"grid grid-cols-1 md:grid-cols-3 gap-x-6\">\n                    <div><label class=\"label\">E-mail<span class=\"required\">*</span></label><input type=\"email\" name=\"Email\" required class=\"input\"></div>\n                    <div><label class=\"label\">Tel. Whatsapp<span class=\"required\">*</span></label><input type=\"tel\" id=\"tel1\" name=\"Teléfono 1\" required class=\"input\" placeholder=\"Ej: +54 9 11 2345-6789\"></div>\n                    <div><label class=\"label\">Teléfono 2</label><input type=\"tel\" name=\"Teléfono 2\" class=\"input\"></div>\n                </div>\n\n                <div class=\"section-title\">Ubicación y Código Postal</div>\n                <div class=\"grid grid-cols-1 md:grid-cols-3 gap-x-4\">\n                    <div>\n                        <label class=\"label\">Provincia<span class=\"required\">*</span></label>\n                        <select name=\"Provincia\" id=\"provincia\" required class=\"select\">\n                            <option value=\"\" disabled selected>Elegir...</option>\n                            <option value=\"CABA\">CABA</option>\n                            <option value=\"Buenos Aires\">Buenos Aires</option>\n                        </select>\n                    </div>\n                    <div><label class=\"label\">Población<span class=\"required\">*</span></label><div id=\"pop-cont\"><select id=\"pSel\" name=\"Población\" required class=\"select\" disabled><option value=\"\">Elija provincia</option></select></div></div>\n                    <div><label class=\"label\">Barrio / Localidad<span class=\"required\">*</span></label><div id=\"bar-cont\"><select id=\"bSel\" name=\"Barrio\" required class=\"select\" disabled><option value=\"\">Elija población</option></select></div></div>\n                </div>\n                <div class=\"grid grid-cols-1 md:grid-cols-3 gap-x-4\">\n                    <div class=\"md:col-span-2\"><label class=\"label\">Dirección (Calle y altura)<span class=\"required\">*</span></label><input type=\"text\" name=\"Dirección\" required class=\"input\"></div>\n                    <div><label class=\"label\">CP (Arg)<span class=\"required\">*</span></label><input type=\"text\" id=\"cp\" name=\"CP\" required class=\"input\" placeholder=\"Ej: C1425ABC\"></div>\n                </div>\n\n                <div class=\"section-title\">Horario de Atención</div>\n                <div class=\"grid grid-cols-1 md:grid-cols-2 gap-x-4\">\n                    <div><label class=\"label\">Desde:<span class=\"required\">*</span></label><select id=\"hI\" name=\"Horario Desde\" required class=\"select\"></select></div>\n                    <div><label class=\"label\">Hasta:<span class=\"required\">*</span></label><select id=\"hF\" name=\"Horario Hasta\" required class=\"select\"></select></div>\n                </div>\n\n                <div class=\"section-title\">Días Abierto (Mínimo 1)</div>\n                <div class=\"checkbox-group mb-6\">\n                    <label class=\"flex items-center gap-2 cursor-pointer\"><input type=\"checkbox\" name=\"Dias\" value=\"Lunes\"> Lunes</label>\n                    <label class=\"flex items-center gap-2 cursor-pointer\"><input type=\"checkbox\" name=\"Dias\" value=\"Martes\"> Martes</label>\n                    <label class=\"flex items-center gap-2 cursor-pointer\"><input type=\"checkbox\" name=\"Dias\" value=\"Miércoles\"> Miércoles</label>\n                    <label class=\"flex items-center gap-2 cursor-pointer\"><input type=\"checkbox\" name=\"Dias\" value=\"Jueves\"> Jueves</label>\n                    <label class=\"flex items-center gap-2 cursor-pointer\"><input type=\"checkbox\" name=\"Dias\" value=\"Viernes\"> Viernes</label>\n                    <label class=\"flex items-center gap-2 cursor-pointer\"><input type=\"checkbox\" name=\"Dias\" value=\"Sábado\"> Sábado</label>\n                    <label class=\"flex items-center gap-2 cursor-pointer\"><input type=\"checkbox\" name=\"Dias\" value=\"Domingo\"> Domingo</label>\n                </div>\n\n                <label class=\"label\">Observaciones</label>\n                <textarea name=\"Observaciones\" rows=\"3\" class=\"textarea\"></textarea>\n                <button type=\"submit\" id=\"submitBtn\" class=\"btn shadow-lg\">Registrar en FEDIR</button>\n            </form>\n        </div>\n    </div>\n\n    <script>\n        const WEBHOOK_URL = 'https://n8n.fmsuit.net/webhook/form_fedir';\n        const dataUbicacion = {\"Buenos Aires\": {\"25 de Mayo\": [\"25 de Mayo\", \"Agustín Mosconi\", \"Del Valle\", \"Ernestina\", \"Gobernador Ugarte\", \"Lucas Monteverde\", \"Norberto de la Riestra\", \"Pedernales\", \"San Enrique\", \"Valdés\"], \"9 de Julio\": [\"12 de Octubre\", \"9 de Julio\", \"Alfredo Demarchi\", \"Carlos María Naón\", \"Dennehy\", \"Dudignac\", \"La Aurora\", \"Manuel B. Gonnet\", \"Marcelino Ugarte\", \"Morea\", \"Norumbega\", \"Patricios\", \"Villa Fournier\"], \"Adolfo Alsina\": [\"Carhué\", \"Colonia San Miguel ArcÁngel\", \"Delfín Huergo\", \"Espartillar\", \"Esteban Agustín Gascón\", \"La Pala\", \"Maza\", \"Rivera\", \"Villa Margarita\"], \"Adolfo Gonzales Chaves\": [\"Adolfo Gonzales Chaves\", \"De La Garma\", \"Juan E. Barra\", \"Vásquez\"], \"Alberti\": [\"Alberti\", \"Coronel Seguí\", \"Mechita\", \"Pla\", \"Villa Grisolía\", \"Villa María\", \"Villa Ortiz\"], \"Almirante Brown\": [\"Adrogué\", \"Almirante Brown\", \"Burzaco\", \"Claypole\", \"Don Orione\", \"Glew\", \"José Mármol\", \"Longchamps\", \"Malvinas Argentinas\", \"Ministro Rivadavia\", \"Rafael Calzada\", \"San Francisco Solano\", \"San José\"], \"Arrecifes\": [\"Arrecifes\", \"Todd\", \"Viña\"], \"Avellaneda\": [\"Avellaneda\", \"Crucesita\", \"Dock Sud\", \"Gerli\", \"Piñeyro\", \"Sarandí\", \"Villa Domínico\", \"Wilde\", \"Área Reserva Cinturón Ecológico\"], \"Ayacucho\": [\"Ayacucho\", \"La Constancia\", \"Solanet\", \"Udaquiola\"], \"Azul\": [\"16 de Julio\", \"Ariel\", \"Azul\", \"Cacharí\", \"Chillar\"], \"Bahía Blanca\": [\"Bahía Blanca\", \"Cabildo\", \"General Daniel Cerri\", \"Grünbein\", \"Ingeniero White\", \"Villa Bordeau\", \"Villa Espora\"], \"Balcarce\": [\"Balcarce\", \"Los Pinos\", \"Napaleofú\", \"Ramos Otero\", \"San Agustín\", \"Villa Laguna La Brava\"], \"Baradero\": [\"Baradero\", \"Irineo Portela\", \"Santa Coloma\", \"Villa Alsina\"], \"Benito Juárez\": [\"Barker\", \"Benito Juárez\", \"López\", \"Tedín Uriburu\", \"Villa Cacique\"], \"Berazategui\": [\"Berazategui\", \"Berazategui Oeste\", \"Carlos Tomás Sourigues\", \"El Pato\", \"Guillermo Enrique Hudson\", \"Juan María Gutiérrez\", \"Pereyra\", \"Plátanos\", \"Ranelagh\", \"Villa España\"], \"Berisso\": [\"Berisso\", \"Barrio Banco Provincia\", \"Barrio El Carmen Este\", \"Barrio Universitario\", \"Los Talas\", \"Villa Argüello\", \"Villa Dolores\", \"Villa Independencia\", \"Villa Nueva\", \"Villa Porteña\", \"Villa Progreso\", \"Villa San Carlos\", \"Villa Zula\"], \"Bolívar\": [\"Hale\", \"Juan F. Ibarra\", \"Paula\", \"Pirovano\", \"San Carlos de Bolívar\", \"Urdampilleta\", \"Villa Lynch Pueyrredón\"], \"Bragado\": [\"Bragado\", \"Comodoro Py\", \"General O'Brien\", \"Irala\", \"Juan F. Salaberry\", \"La Limpia\", \"Mechita\", \"Olascoaga\", \"Warnes\"], \"Brandsen\": [\"Altamirano\", \"Barrio Las Golondrinas\", \"Barrio Los Bosquecitos\", \"Barrio Parque Las Acacias\", \"Coronel Brandsen\", \"Gómez\", \"Jeppener\", \"Oliden\", \"Samborombón\"], \"Campana\": [\"Barrio Los Pioneros (Barrio Tavella)\", \"Los Cardales\"], \"Cañuelas\": [\"Alejandro Petión\", \"Barrio El Taladro\", \"Cañuelas\", \"Gobernador Udaondo\", \"Santa Rosa\", \"Uribelarrua\", \"Vicente Casares\"], \"Capitán Sarmiento\": [\"Capitán Sarmiento\", \"La Luisa\"], \"Carlos Casares\": [\"Bellocq\", \"Cadret\", \"Carlos Casares\", \"Colonia Mauricio\", \"Hortensia\", \"La Sofía\", \"Mauricio Hirsch\", \"Moctezuma\", \"Ordoqui\", \"Smith\"], \"Carlos Tejedor\": [\"Carlos Tejedor\", \"Colonia Seré\", \"Curarú\", \"Timote\", \"Tres Algarrobos\"], \"Carmen de Areco\": [\"Carmen de Areco\", \"Pueblo Gouin\", \"Tres Sargentos\"], \"Castelli\": [\"Castelli\", \"Centro Guerrero\", \"Cerro de la Gloria\"], \"Chacabuco\": [\"Castilla\", \"Chacabuco\", \"Los Angeles\", \"O'Higgins\", \"Rawson\"], \"Chascomús\": [\"Barrio San Cayetano\", \"Chascomús\", \"Villa Parque Girado\"], \"Chivilcoy\": [\"Chivilcoy\", \"Emilio Ayarza\", \"Gorostiaga\", \"La Rica\", \"MoquehuÁ\", \"Ramón Biaus\", \"San Sebastián\"], \"Colón\": [\"Colón\", \"Pearson\", \"Sarasa\", \"Villa Manuel Pomar\"], \"Coronel de Marina Leonardo Rosales\": [\"Bajo Hondo\", \"Balneario Pehuen Co\", \"Punta Alta\", \"Villa General Arias\", \"Villa del Mar\"], \"Coronel Dorrego\": [\"Aparicio\", \"Coronel Dorrego\", \"El Perdido\", \"Faro\", \"Irene\", \"Marisol\", \"Oriente\", \"San Román\"], \"Coronel Pringles\": [\"Coronel Pringles\", \"El Divisorio\", \"El Pensamiento\", \"Indio Rico\", \"Lartigau\"], \"Coronel Suárez\": [\"Cascada\", \"Coronel Suárez\", \"Curamalal\", \"D'Orbigny\", \"Huanguelén\", \"Pasman\", \"San José\", \"Santa María\", \"Santa Trinidad\", \"Villa La Arcadia\"], \"Daireaux\": [\"Andant\", \"Arboledas\", \"Daireaux\", \"La Larga\", \"Salazar\"], \"Dolores\": [\"Dolores\", \"Sevigne\"], \"Ensenada\": [\"Dique N° 1\", \"Ensenada\", \"Isla Santiago\", \"Punta Lara\", \"Villa Catela\"], \"Escobar\": [\"Belén de Escobar\", \"El Cazador\", \"Escobar\", \"Garín\", \"Ingeniero Maschwitz\", \"Loma Verde\", \"Maquinista F. Savio Este\", \"Matheu\"], \"Esteban Echeverría\": [\"9 de Abril\", \"Canning\", \"Esteban Echeverría\", \"El Jagüel\", \"Luis Guillón\", \"Monte Grande\"], \"Exaltación de la Cruz\": [\"Arroyo de la Cruz\", \"El Remanso\", \"Parada Orlando\", \"Parada Robles\", \"Parada Robles - Pavón\", \"Pavón\"], \"Ezeiza\": [\"Aeropuerto Internacional Ezeiza\", \"Canning\", \"Carlos Spegazzini\", \"Ezeiza\", \"José María Ezeiza\", \"La Unión\", \"Tristán Suárez\"], \"Florencio Varela\": [\"Bosques\", \"El Tropezón\", \"Estanislao Severo Zeballos\", \"Florencio Varela\", \"Gobernador Julio A. Costa\", \"Ingeniero Juan Allan\", \"La Capilla\", \"San Juan Bautista\", \"Villa Brown\", \"Villa San Luis\", \"Villa Santa Rosa\", \"Villa Vatteone\"], \"Florentino Ameghino\": [\"Blaquier\", \"Florentino Ameghino\", \"Porvenir\"], \"General Alvarado\": [\"Comandante Nicanor Otamendi\", \"Mar del Sur\", \"Mechongué\", \"Miramar\"], \"General Alvear\": [\"General Alvear\"], \"General Arenales\": [\"Arribeños\", \"Ascensión\", \"Estación Arenales\", \"Ferré\", \"General Arenales\", \"La Angelita\", \"La Trinidad\"], \"General Belgrano\": [\"General Belgrano\", \"Gorchs\"], \"General Guido\": [\"General Guido\", \"Labardén\"], \"General Juan Madariaga\": [\"Barrio Kennedy\", \"General Juan Madariaga\"], \"General La Madrid\": [\"General La Madrid\", \"La Colina\", \"Las Martinetas\", \"Líbano\", \"Pontaut\"], \"General Las Heras\": [\"General Hornos\", \"General Las Heras\", \"La Choza\", \"Plomer\"], \"General Lavalle\": [\"General Lavalle\"], \"General Paz\": [\"Barrio Río Salado\", \"Loma Verde\", \"Ranchos\", \"Villanueva\"], \"General Pinto\": [\"Colonia San Ricardo\", \"General Pinto\", \"Germania\", \"Villa Francia\", \"Villa Roth\"], \"General Pueyrredón\": [\"Barrio Colinas Verdes\", \"Barrio El Casal\", \"Barrio El Coyunco\", \"Barrio La Gloria\", \"Barrio Santa Paula\", \"Batán\", \"Camet\", \"Chapadmalal\", \"El Marquesado\", \"Estación Camet\", \"Estación Chapadmalal\", \"Mar del Plata\", \"Punta Mogotes\", \"Sierra de los Padres\"], \"General Rodríguez\": [\"Barrio Morabo\", \"Barrio Ruta 24 Kilómetro 10\", \"Country Club Bosque Real\", \"General Rodríguez\"], \"General San Martín\": [\"Barrio Parque General San Martín\", \"Billinghurst\", \"Ciudad Jardín El Libertador\", \"Ciudad del Libertador General San Martín\", \"General San Martín\", \"Villa Ayacucho\", \"Villa Ballester\", \"Villa Bernardo Monteagudo\", \"Villa Chacabuco\", \"Villa Coronel José M. Zapiola\", \"Villa General Antonio J. de Sucre\", \"Villa General Eugenio Necochea\", \"Villa General José Tomás Guido\", \"Villa General Juan G. Las Heras\", \"Villa Godoy Cruz\", \"Villa Granaderos de San Martín\", \"Villa Gregoria Matorras\", \"Villa José León Suárez\", \"Villa Juan Martín de Pueyrredón\", \"Villa Libertad\", \"Villa Lynch\", \"Villa Maipú\", \"Villa Parque Presidente Figueroa Alcorta\", \"Villa Parque San Lorenzo\", \"Villa San Andrés\", \"Villa Yapeyú\", \"Va.MarÍa Irene de los Remedios Escalada\", \"Va.MarquÉs Alejandro MarÍa de Aguado\"], \"General Viamonte\": [\"Baigorrita\", \"La Delfina\", \"Los Toldos\", \"San Emilio\", \"Zavalía\"], \"General Villegas\": [\"Banderaló\", \"Cañada Seca\", \"Coronel Charlone\", \"Emilio V. Bunge\", \"General Villegas\", \"Massey\", \"Pichincha\", \"Piedritas\", \"Santa Eleodora\", \"Santa Regina\", \"Villa Saboya\", \"Villa Sauze\"], \"Guaminí\": [\"Arroyo Venado\", \"Casbas\", \"Garré\", \"Guaminí\", \"Laguna Alsina\"], \"Hipólito Yrigoyen\": [\"Henderson\", \"Herrera Vegas\"], \"Hurlingham\": [\"Hurlingham\", \"Villa Santos Tesei\", \"William C. Morris\"], \"Ituzaingó\": [\"Ituzaingó\", \"Ituzaingó Centro\", \"Ituzaingó Sur\", \"Villa Gobernador Udadondo\"], \"José C. Paz\": [\"Del Viso\", \"José C. Paz\", \"Tortuguitas\"], \"Junín\": [\"Agustín Roca\", \"Agustina\", \"Balneario Laguna de Gómez\", \"Fortín Tiburcio\", \"Junín\", \"Laplacette\", \"Saforcada\"], \"La Costa\": [\"Aguas Verdes\", \"Las Toninas\", \"Lucila del Mar\", \"Mar de Ajó\", \"Mar de Ajó Norte\", \"Mar de Ajó - San Bernardo\", \"Mar del Tuyú\", \"San Bernardo\", \"San Clemente del Tuyú\", \"Santa Teresita\", \"Santa Teresita - Mar del Tuyú\"], \"La Matanza\": [\"20 de Junio\", \"Aldo Bonzi\", \"Ciudad Evita\", \"GonzÁlez CatÁn\", \"Gregorio de Laferrere\", \"Isidro Casanova\", \"La Matanza\", \"La Tablada\", \"Lomas del Mirador\", \"Rafael Castillo\", \"Ramos Mejía\", \"San Justo\", \"Tapiales\", \"Villa Eduardo Madero\", \"Villa Luzuriaga\", \"Virrey del Pino\"], \"La Plata\": [\"Abasto\", \"Arana\", \"Arturo Seguí\", \"Barrio El Carmen Oeste\", \"Barrio Gambier\", \"Barrio Las Malvinas\", \"Barrio Las Quintas\", \"City Bell\", \"El Retiro\", \"Joaquín Gorina\", \"José Hernández\", \"José Melchor Romero\", \"La Cumbre\", \"La Plata\", \"Lisandro Olmos\", \"Los Hornos\", \"Manuel B. Gonnet\", \"Ringuelet\", \"Rufino de Elizalde\", \"Tolosa\", \"Transradio\", \"Villa Elisa\", \"Villa Elvira\", \"Villa Garibaldi\", \"Villa Montoro\", \"Villa Parque Sicardi\", \"Ángel Etcheverry\"], \"Lanús\": [\"Gerli\", \"Lanús\", \"Lanús Este\", \"Lanús Oeste\", \"Monte Chingolo\", \"Remedios de Escalada de San Martín\", \"Valentín Alsina\"], \"Laprida\": [\"Laprida\", \"Pueblo Nuevo\", \"Pueblo San Jorge\"], \"Las Flores\": [\"Coronel Boerr\", \"El Trigo\", \"Las Flores\", \"Pardo\"], \"Leandro N. Alem\": [\"Alberdi Viejo\", \"El Dorado\", \"Fortín Acha\", \"Juan Bautista Alberdi\", \"Leandro N. Alem\", \"Vedia\"], \"Lezama\": [\"Manuel J. Cobo\"], \"Lincoln\": [\"Arenaza\", \"Bayauca\", \"Bermúdez\", \"Carlos Salas\", \"Coronel Martínez de Hoz\", \"El Triunfo\", \"Las Toscas\", \"Lincoln\", \"Pasteur\", \"Roberts\", \"Triunvirato\"], \"Lobería\": [\"Arenas Verdes\", \"Licenciado Matienzo\", \"Lobería\", \"Pieres\", \"San Manuel\", \"Tamangueyú\"], \"Lobos\": [\"Antonio Carboni\", \"Elvira\", \"Laguna de Lobos\", \"Lobos\", \"Salvador María\"], \"Lomas de Zamora\": [\"Banfield\", \"Llavallol\", \"Lomas de Zamora\", \"Temperley\", \"Turdera\", \"Villa Centenario\", \"Villa Fiorito\"], \"Luján\": [\"Barrio Las Casuarinas\", \"Carlos Keen\", \"Cortines\", \"Country Club Las Praderas\", \"Lezica y Torrezuri\", \"Luján\", \"Olivera\", \"Open Door\", \"Torres\", \"Villa Flandria Norte\", \"Villa Flandria Sur\"], \"Magdalena\": [\"Atalaya\", \"General Mansilla\", \"Los Naranjos\", \"Magdalena\", \"Roberto J. Payró\", \"Vieytes\"], \"Maipú\": [\"Las Armas\", \"Maipú\", \"Santo Domingo\"], \"Malvinas Argentinas\": [\"Grand Bourg\", \"Ingeniero Adolfo Sourdeaux\", \"Ingeniero Pablo Nogués\", \"Los Polvorines\", \"Malvinas Argentinas\", \"Tortuguitas\", \"Villa de Mayo\", \"Área de Promoción El Triángulo\"], \"Mar Chiquita\": [\"Atlántida\", \"Camet Norte\", \"Coronel Vidal\", \"Frente Mar\", \"General Pirán\", \"La Armonía\", \"La Baliza\", \"La Caleta\", \"Mar Chiquita\", \"Mar de Cobo\", \"Playa Dorada\", \"Santa Clara del Mar\", \"Santa Elena\", \"Vivoratá\"], \"Marcos Paz\": [\"Barrio Lisandro de la Torre y Santa Marta\", \"Marcos Paz\"], \"Mercedes\": [\"Gowland\", \"Jorge Born\", \"Mercedes\"], \"Merlo\": [\"Libertad\", \"Mariano Acosta\", \"Merlo\", \"Pontevedra\", \"San Antonio de Padua\"], \"Monte\": [\"Abbott\", \"San Miguel del Monte\", \"Zenón Videla Dorna\"], \"Monte Hermoso\": [\"Balneario Sauce Grande\", \"Monte Hermoso\"], \"Moreno\": [\"Cuartel V\", \"Francisco Álvarez\", \"La Reja\", \"Moreno\", \"Paso del Rey\", \"Trujui\"], \"Morón\": [\"Castelar\", \"El Palomar\", \"Haedo\", \"Morón\", \"Villa Sarmiento\"], \"Navarro\": [\"José Juan Almeyra\", \"Las Marianas\", \"Navarro\", \"Villa Moll\"], \"Necochea\": [\"Claraz\", \"Costa Bonita\", \"Juan N. FernÁndez\", \"Necochea\", \"Necochea - Quequén\", \"Nicanor Olivera\", \"Quequén\", \"Ramón Santamarina\"], \"Olavarría\": [\"Colonia Hinojo\", \"Colonia San Miguel\", \"Espigas\", \"Hinojo\", \"Olavarría\", \"Recalde\", \"Santa Luisa\", \"Sierra Chica\", \"Sierras Bayas\", \"Villa Alfredo Fortabat\", \"Villa Arrieta\", \"Villa La Serranía\"], \"Patagones\": [\"Bahía San Blas\", \"Cardenal Cagliero\", \"Carmen de Patagones\", \"José B. Casas\", \"Juan A. Pradere\", \"Stroeder\", \"Villalonga\"], \"Pehuajó\": [\"Capitán Castro\", \"Francisco Madero\", \"Juan José Paso\", \"Magdala\", \"Mones Cazón\", \"Nueva Plata\", \"Pehuajó\", \"San Bernardo\", \"San Esteban\"], \"Pellegrini\": [\"Bocayuva\", \"De Bary\", \"Pellegrini\"], \"Pergamino\": [\"Acevedo\", \"Fontezuela\", \"Guerrico\", \"Juan A. de la Peña\", \"Juan Anchorena\", \"La Violeta\", \"Manuel Ocampo\", \"Mariano Benítez\", \"Mariano H. Alfonzo\", \"Pergamino\", \"Pinzón\", \"Rancagua\", \"Villa Angélica\", \"Villa San José\"], \"Pila\": [\"Casalins\", \"Pila\"], \"Pilar\": [\"Del Viso\", \"Fátima\", \"La Lonja\", \"Los Cachorros\", \"Manzanares\", \"Manzone\", \"Maquinista F. Savio Oeste\", \"Pilar\", \"Presidente Derqui\", \"Roberto de Vicenzo\", \"Santa Teresa\", \"Tortuguitas\", \"Villa Astolfi\", \"Villa Rosa\", \"Zelaya\"], \"Pinamar\": [\"Cariló\", \"Ostende\", \"Pinamar\", \"Valeria del Mar\"], \"Presidente Perón\": [\"Barrio AmÉrica Unida\", \"Guernica\", \"Presidente Perón\"], \"Puán\": [\"17 de Agosto\", \"Azopardo\", \"Bordenave\", \"Darregueira\", \"Estela\", \"Felipe Solá\", \"López Lecube\", \"Puán\", \"San Germán\", \"Villa Castelar\", \"Villa Iris\"], \"Punta Indio\": [\"Alvarez Jonte\", \"Pipinas\", \"Punta Indio\", \"Verónica\"], \"Quilmes\": [\"Bernal\", \"Bernal Oeste\", \"Don Bosco\", \"Ezpeleta\", \"Ezpeleta Oeste\", \"Quilmes\", \"Quilmes Oeste\", \"San Francisco Solano\", \"Villa La Florida\"], \"Ramallo\": [\"El Paraíso\", \"Las Bahamas\", \"PÉrez MillÁn\", \"Ramallo\", \"Villa General Savio\", \"Villa Ramallo\"], \"Rauch\": [\"Rauch\"], \"Rivadavia\": [\"América\", \"Fortín Olavarría\", \"GonzÁlez Moreno\", \"Mira Pampa\", \"Roosevelt\", \"San Mauricio\", \"Sansinena\", \"Sundblad\"], \"Rojas\": [\"Barrio Las Margaritas\", \"La Beba\", \"Las Carabelas\", \"Los Indios\", \"Rafael Obligado\", \"Roberto Cano\", \"Rojas\", \"Sol de Mayo\", \"Villa Manuel Pomar\", \"Villa Parque Cecir\"], \"Roque Pérez\": [\"Carlos Beguerie\", \"Roque Pérez\"], \"Saavedra\": [\"Arroyo Corto\", \"Colonia San Martín\", \"Dufaur\", \"Espartillar\", \"Goyena\", \"PigüÉ\", \"Saavedra\"], \"Saladillo\": [\"Álvarez de Toledo\", \"Cazón\", \"Del Carril\", \"Polvaredas\", \"Saladillo\"], \"Salliqueló\": [\"QuenumÁ\", \"Salliqueló\"], \"Salto\": [\"Arroyo Dulce\", \"Berdier\", \"Gahan\", \"InÉs Indart\", \"La Invencible\", \"Salto\"], \"San Andrés de Giles\": [\"AzcuÉnaga\", \"CucullÚ\", \"Franklin\", \"San Andrés de Giles\", \"Solís\", \"Villa Espil\", \"Villa Ruiz\"], \"San Antonio de Areco\": [\"Duggan\", \"San Antonio de Areco\", \"Villa Lía\"], \"San Cayetano\": [\"Balneario San Cayetano\", \"Ochandío\", \"San Cayetano\"], \"San Fernando\": [\"San Fernando\", \"Victoria\", \"Virreyes\"], \"San Isidro\": [\"Acasusso\", \"Boulogne Sur Mer\", \"BÉccar\", \"Martínez\", \"San Isidro\", \"Villa Adelina\"], \"San Miguel\": [\"Bella Vista\", \"Campo de Mayo\", \"Muñiz\", \"San Miguel\"], \"San Vicente\": [\"Alejandro Korn\", \"Domselaar\", \"San Vicente\"], \"Suipacha\": [\"General Rivas\", \"Suipacha\"], \"Tandil\": [\"De la Canal\", \"Gardey\", \"María Ignacia\", \"Tandil\"], \"Tapalqué\": [\"Crotto\", \"Tapalqué\"], \"Tigre\": [\"Benavídez\", \"Dique LujÁn\", \"Don Torcuato\", \"El Talar\", \"General Pacheco\", \"Ricardo Rojas\", \"Tigre\", \"Troncos del Talar\"], \"Tordillo\": [\"General Conesa\"], \"Tornquist\": [\"Chasicó\", \"Saldungaray\", \"Sierra de la Ventana\", \"Tornquist\", \"Villa Serrana La Gruta\", \"Villa Ventana\"], \"Trenque Lauquen\": [\"30 de Agosto\", \"Beruti\", \"Girodias\", \"Trenque Lauquen\"], \"Tres Arroyos\": [\"Claromecó\", \"Copetonas\", \"Dunamar\", \"Micaela Cascallares\", \"Orense\", \"Reta\", \"San Francisco de Bellocq\", \"San Mayol\", \"Tres Arroyos\"], \"Tres de Febrero\": [\"11 de Septiembre\", \"Caseros\", \"Churruca\", \"Ciudad Jardín Lomas del Palomar\", \"Ciudadela\", \"El Libertador\", \"José Ingenieros\", \"Loma Hermosa\", \"Martín Coronado\", \"Pablo Podestá\", \"Remedios de Escalada\", \"Sáenz Peña\", \"Santos Lugares\", \"Tres de Febrero\", \"Villa Bosch\", \"Villa Raffo\"], \"Tres Lomas\": [\"Ingeniero Thompson\", \"Tres Lomas\"], \"Vicente López\": [\"Carapachay\", \"Florida\", \"Florida Oeste\", \"La Lucila\", \"Munro\", \"Olivos\", \"Vicente López\", \"Villa Adelina\", \"Villa Martelli\"], \"Villa Gesell\": [\"Mar Azul\", \"Mar de las Pampas\", \"Villa Gesell\"], \"Villarino\": [\"Argerich\", \"Hilario Ascasubi\", \"Juan CoustÉ\", \"Mayor Buratovich\", \"Médanos\", \"Pedro Luro\"], \"Zárate\": [\"Escalada\", \"Lima\", \"Zárate\"]}, \"CABA\": {\"Capital Federal\": [\"AGRONOMIA\", \"ALMAGRO\", \"BALVANERA\", \"BARRACAS\", \"BELGRANO\", \"BOEDO\", \"CABALLITO\", \"CHACARITA\", \"CIUDAD DE BUENOS AIRES\", \"COGHLAN\", \"COLEGIALES\", \"CONSTITUCION\", \"FLORES\", \"FLORESTA\", \"LA BOCA\", \"LA PATERNAL\", \"LINIERS\", \"MATADEROS\", \"MONTE CASTRO\", \"MONTSERRAT\", \"NUEVA POMPEYA\", \"NUÑEZ\", \"PALERMO\", \"PARQUE AVELLANEDA\", \"PARQUE CHACABUCO\", \"PARQUE CHAS\", \"PARQUE PATRICIOS\", \"PUERTO MADERO\", \"RECOLETA\", \"RETIRO\", \"SAAVEDRA\", \"SAN CRISTOBAL\", \"SAN NICOLAS\", \"SAN TELMO\", \"VELEZ SARSFIELD\", \"VERSALLES\", \"VILLA CRESPO\", \"VILLA DEL PARQUE\", \"VILLA DEVOTO\", \"VILLA GRL. MITRE\", \"VILLA LUGANO\", \"VILLA LURO\", \"VILLA ORTUZAR\", \"VILLA PUEYRREDON\", \"VILLA REAL\", \"VILLA RIACHUELO\", \"VILLA SANTA RITA\", \"VILLA SOLDATI\", \"VILLA URQUIZA\"]}};\n\n        const hI = document.getElementById('hI'), hF = document.getElementById('hF');\n        hI.add(new Option('Seleccione hora...', '', true, true));\n        hI.options[0].disabled = true;\n        hF.add(new Option('Seleccione hora...', '', true, true));\n        hF.options[0].disabled = true;\n        for(let i=6;i<24;i++){ let t=(i<10?'0':'')+i+':00'; hI.add(new Option(t,t)); hF.add(new Option(t,t)); }\n\n        const cuitIn = document.getElementById('cuit');\n        cuitIn.addEventListener('input', function() { this.value = this.value.replace(/[^0-9]/g, ''); });\n\n        const pS = document.getElementById('provincia'), pSel = document.getElementById('pSel'), bSel = document.getElementById('bSel');\n        pS.onchange = function(){\n            const prov = this.value; \n            pSel.innerHTML = \"\"; pSel.disabled = false;\n            if (prov === 'CABA') {\n                pSel.add(new Option(\"Capital Federal\", \"Capital Federal\"));\n                updateBarrios('CABA', 'Capital Federal');\n            } else {\n                pSel.add(new Option(\"Localidad...\", \"\", true, true));\n                Object.keys(dataUbicacion[prov]).forEach(p => pSel.add(new Option(p, p)));\n                bSel.innerHTML = '<option value=\"\">Elija población</option>'; bSel.disabled = true;\n            }\n        };\n\n        pSel.onchange = function() { updateBarrios(pS.value, this.value); };\n\n        function updateBarrios(prov, popName) {\n            bSel.innerHTML = '<option value=\"\" disabled selected>Barrio...</option>'; bSel.disabled = false;\n            dataUbicacion[prov][popName].forEach(b => bSel.add(new Option(b, b)));\n        }\n\n        function normalizarCelularArgentino(tel) {\n            if (!tel) return null;\n            let digits = tel.toString().replace(/[^0-9]/g, '');\n            if (digits.startsWith('0')) digits = digits.substring(1);\n            if (digits.startsWith('54')) {\n                digits = digits.substring(2);\n                if (digits.startsWith('9')) digits = digits.substring(1);\n            }\n            // Quitar 15 si viene después del código de área (ej: 11 15 12345678 -> 11 12345678)\n            for (let areaLen of [2, 3, 4]) {\n                if (digits.length > areaLen + 2 && digits.substring(areaLen, areaLen + 2) === '15') {\n                    digits = digits.substring(0, areaLen) + digits.substring(areaLen + 2);\n                    break;\n                }\n            }\n            // Los celulares en Argentina con código de área tienen exactamente 10 dígitos (sin el 0 ni el 15)\n            if (digits.length === 10) {\n                return '+549' + digits;\n            }\n            return null;\n        }\n\n        function validarCUIT(c) {\n            c = c.replace(/[^0-9]/g, \"\"); \n            if (c.length !== 11 || /^(\\d)\\1+$/.test(c)) return false; \n            let m = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2], t = 0;\n            for (let i = 0; i < 10; i++) t += parseInt(c[i]) * m[i];\n            let r = t % 11, d = r === 0 ? 0 : r === 1 ? 9 : 11 - r;\n            return d === parseInt(c[10]);\n        }\n\n        function validarCP(cp) {\n            const regex = /(^[0-9]{4}$)|(^[A-Za-z][0-9]{4}[A-Za-z]{3}$)/;\n            return regex.test(cp.trim());\n        }\n\n        document.getElementById('fedirForm').onsubmit = async (e) => {\n            e.preventDefault();\n            const btn = document.getElementById('submitBtn');\n            const diasChecked = Array.from(e.target.querySelectorAll('input[name=\"Dias\"]:checked'));\n            \n            if(diasChecked.length === 0) { alert(\"Marque al menos un día de atención.\"); return; }\n            if (!validarCUIT(cuitIn.value)) { alert(\"CUIT inválido o prohibido.\"); return; }\n            if (!validarCP(document.getElementById('cp').value)) { alert(\"CP inválido (ej: 1002 o C1425ABC).\"); return; }\n            \n            const tel1Input = document.getElementById('tel1');\n            const tel1Normalizado = normalizarCelularArgentino(tel1Input ? tel1Input.value : '');\n            if (!tel1Normalizado) {\n                alert(\"Tel. Whatsapp inválido. Ingrese un celular válido (ej: +54 9 11 2345-6789 o 11 2345-6789).\");\n                return;\n            }\n            if (!hI.value || !hF.value) { alert(\"Debe seleccionar un horario de atención.\"); return; }\n            if (hF.value <= hI.value) { alert(\"La hora de cierre debe ser superior a la de apertura.\"); return; }\n\n            btn.disabled = true; btn.innerText = \"Registrando...\";\n\n            const formData = new FormData(e.target);\n            const data = Object.fromEntries(formData.entries());\n            data.Dias = diasChecked.map(cb => cb.value);\n            data[\"Teléfono 1\"] = tel1Normalizado;\n\n            try {\n                const res = await fetch(WEBHOOK_URL, { method: 'POST', body: JSON.stringify(data), headers: {'Content-Type': 'application/json'} });\n                const htmlResponse = await res.text();\n                document.getElementById('container-fedir').innerHTML = htmlResponse;\n            } catch (err) { alert('Error: Revise n8n.'); btn.disabled = false; }\n        };\n    </script>\n</body>\n</html>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        -448,
+        -176
+      ],
+      "id": "7a3ce324-6c6a-4226-8584-9fba6a568cf4",
+      "name": "Respond to Webhook1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<div style=\"max-width: 500px; margin: 40px auto; text-align: center; padding: 40px; font-family: 'Segoe UI', Tahoma, sans-serif; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);\">\n  <div style=\"font-size: 70px; color: #48bb78; margin-bottom: 20px;\">✓</div>\n  <h2 style=\"color: #2b6cb0; font-size: 32px; font-weight: 800; margin-bottom: 15px; letter-spacing: -1px;\">¡Alta Finalizada!</h2>\n  <p style=\"font-size: 18px; color: #4a5568; line-height: 1.6; margin-bottom: 30px;\">Los datos han sido recibidos y procesados correctamente en el sistema <strong>FEDIR</strong>.</p>\n  <div style=\"background: #edf2f7; padding: 15px; border-radius: 10px; color: #718096; font-weight: 600; font-size: 15px;\">\n    Ya puede cerrar esta ventana de forma manual.\n  </div>\n</div>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        128,
+        0
+      ],
+      "id": "035f5af6-51c6-4296-83d6-ff3828a4b639",
+      "name": "Pantalla Exito"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<div style=\"max-width: 500px; margin: 40px auto; text-align: center; padding: 40px; font-family: 'Segoe UI', Tahoma, sans-serif; background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05);\">\n  <div style=\"font-size: 70px; color: #e53e3e; margin-bottom: 20px;\">✗</div>\n  <h2 style=\"color: #e53e3e; font-size: 32px; font-weight: 800; margin-bottom: 15px; letter-spacing: -1px;\">Error en el Servidor</h2>\n  <p style=\"font-size: 18px; color: #4a5568; line-height: 1.6; margin-bottom: 30px;\">Hubo un problema al intentar guardar los datos en la base de datos de <strong>FEDIR</strong>.</p>\n  <div style=\"background: #fff5f5; padding: 15px; border-radius: 10px; color: #c53030; font-weight: 600; font-size: 15px; border: 1px solid #fed7d7;\">\n    Por favor, actualice la p&aacute;gina y vuelva a intentarlo en unos minutos.\n  </div>\n</div>",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        112,
+        192
+      ],
+      "id": "cb4f9a95-869a-4262-a2e4-d85ab2c38adc",
+      "name": "Pantalla Error"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3bf8c7df-505a-4909-b128-2554c3b433b0",
+              "leftValue": "={{ $json.response.scriptError }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "0a6a24f3-49e1-43d4-bc51-527ed2552b54",
+              "leftValue": "={{ $json.messages[0].code }}",
+              "rightValue": "0",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            },
+            {
+              "id": "9e3039a0-9786-4a9e-979d-ae867f9656c9",
+              "leftValue": "={{ $json.response.scriptResult }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -144,
+        32
+      ],
+      "id": "bebf9c9f-61b0-4e88-93da-b8079ff8f99e",
+      "name": "If",
+      "alwaysOutputData": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "FileMaker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FileMaker": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pantalla Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Pantalla Exito",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pantalla Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "0d78d58e-38d6-4a7d-b101-3863a793c9ba",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "24323f1d850949c97114ac7c76a03f3096ce6e7800599a9a956f6865bb197376"
+  },
+  "nodeGroups": [],
+  "id": "G92bng2_ojs2XhpNu3fJb",
+  "tags": []
+}
