@@ -9,10 +9,12 @@ import type { FmLoginResponse, FmFindResponse, FmSingleResponse, FmCreateRespons
 @Injectable({ providedIn: 'root' })
 export class FileMakerService {
   private get baseUrl(): string {
-    // En producción se usa la URL completa. En dev el proxy de Angular
-    // (proxy.conf.json) intercepta /fmi/ y lo reenvía a fmsuit.cat.
+    // En dev el proxy de Angular (proxy.conf.json) intercepta /fmi/ y lo
+    // reenvía a fmsuit.cat (evita CORS desde http://127.0.0.1:8100).
+    // En producción se llama directamente al host de FileMaker.
     if (environment.production) {
-      return `${environment.fmHost}/fmi/data/${environment.fmVersion}/databases/${environment.fmDatabase}`;
+      const host = environment.fmHost.replace(/\/$/, '');
+      return `${host}/fmi/data/${environment.fmVersion}/databases/${environment.fmDatabase}`;
     }
     return `/fmi/data/${environment.fmVersion}/databases/${environment.fmDatabase}`;
   }

@@ -30,7 +30,7 @@ export class ParadaDetallePage {
   quantContRecollits: number | null = null;
   quantContenidor: number | null = null;
   tipUsContenidor = '';
-  cantidadRecogida: number | null = null;
+  cantidadRecogida: number | string | null = null;
   flagFet = '';
   flagAnulat = '';
   motiuAnulat = '';
@@ -120,7 +120,8 @@ export class ParadaDetallePage {
   }
 
   onCantidadChange(): void {
-    if (this.cantidadRecogida != null && this.cantidadRecogida < 0) {
+    const val = Number(this.cantidadRecogida);
+    if (!isNaN(val) && val < 0) {
       this.cantidadRecogida = 0;
     }
     this.checkRealizadoAuto();

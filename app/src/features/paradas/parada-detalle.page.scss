@@ -43,6 +43,20 @@
     margin-bottom: 6px;
     border-radius: 6px;
   }
+
+  ion-select::part(text),
+  ion-select::part(placeholder) {
+    font-weight: 700;
+  }
+
+  .fedir-cantidad-input {
+    text-align: right;
+
+    &::part(native) {
+      font-weight: 700;
+      text-align: right;
+    }
+  }
 }
 
 .fedir-point-status-row {

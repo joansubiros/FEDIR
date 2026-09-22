@@ -70,11 +70,13 @@
     <ion-item>
       <ion-input
         label="Cantidad Recogida"
-        type="number"
+        type="text"
+        inputmode="decimal"
         min="0"
         [value]="cantidadRecogida"
         [(ngModel)]="cantidadRecogida"
-        (ionInput)="onCantidadChange()">
+        (ionInput)="onCantidadChange()"
+        class="fedir-cantidad-input ion-text-end">
       </ion-input>
     </ion-item>
 
