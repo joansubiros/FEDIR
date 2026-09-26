@@ -3,6 +3,45 @@ import { Observable, catchError, concatMap, forkJoin, map, of, switchMap, throwE
 import { FileMakerService } from '../../core/services/filemaker.service';
 import type { RutaListItem, RutaDetalle, LrutaDetalle, DireccioItem } from '../../core/models/fm.models';
 
+// Diccionario de personal conocido por UUID / usuario para resolución inmediata
+const KNOWN_PERSONAL: Record<string, string> = {
+  '35bd3e35-2fae-e94f-ad97-5008af6f099b': 'Guadalupe Rodríguez',
+  '80c8dda9-bd67-9745-ad7e-504fed2c9902': 'Bruno Di Mauro',
+  'c8492db0-fd3a-ea40-bb5e-2da3548a1b97': 'Thomas Garmendia',
+  '6c0a90c8-f694-274e-8625-754c40b70b5b': 'Bruno Di Mauro',
+  'b4b70ba2-89da-c942-9e88-414aaea922f0': 'Thomas Garmendia',
+  'grodriguez': 'Guadalupe Rodríguez',
+  'mbarbitta': 'Matías Barbitta',
+  'scoronel': 'Sergio Coronel',
+  'bdimauro': 'Bruno Di Mauro',
+  'tgarmendia': 'Thomas Garmendia',
+};
+
+export const resolvePersonalName = (val: unknown): string => {
+  if (!val) return '';
+  const str = String(val).trim();
+  const lower = str.toLowerCase();
+  if (KNOWN_PERSONAL[lower]) return KNOWN_PERSONAL[lower];
+  return str;
+};
+
+const getFieldStr = (data: Record<string, unknown>, names: string[]): string => {
+  for (const n of names) {
+    if (data[n] !== undefined && data[n] !== null && String(data[n]).trim() !== '') {
+      return String(data[n]).trim();
+    }
+  }
+  for (const n of names) {
+    const suffix = n.split('::').pop()!.toLowerCase();
+    for (const k of Object.keys(data)) {
+      if (k.toLowerCase().endsWith(suffix) && data[k] !== undefined && data[k] !== null && String(data[k]).trim() !== '') {
+        return String(data[k]).trim();
+      }
+    }
+  }
+  return '';
+};
+
 @Injectable({ providedIn: 'root' })
 export class RutaService {
   constructor(private fm: FileMakerService) {}
@@ -105,34 +144,70 @@ export class RutaService {
               catchError(() => of(point)),
             );
           }))),
-          map(statusPoints => ({
-            recordId: r.recordId,
-            modId: r.modId,
-            fieldData: {
-              Id_Ruta: String(r.fieldData['Id_Ruta'] ?? ''),
-              Id_Ruta_serial: Number(r.fieldData['Id_Ruta_serial'] ?? r.fieldData['RUTA::Id_Ruta_serial'] ?? r.fieldData['ruta_RUTA::Id_Ruta_serial'] ?? 0),
-              Nom_Personal_1: String(r.fieldData['ruta_PERSONAL1::Nom_Complert'] ?? ''),
-              Nom_Personal_2: String(r.fieldData['ruta_PERSONAL2::Nom_Complert'] ?? ''),
-              Nom_Personal_3: String(r.fieldData['ruta_PERSONAL3::Nom_Complert'] ?? ''),
-              Id_Personal_1: String(r.fieldData['Id_Personal_1'] ?? ''),
-              Id_Personal_2: String(r.fieldData['Id_Personal_2'] ?? ''),
-              Id_Personal_3: String(r.fieldData['Id_Personal_3'] ?? ''),
-              Id_Vehicle: String(r.fieldData['Id_Vehicle'] ?? ''),
-              Data: String(r.fieldData['Data'] ?? ''),
-              Temps_Privisio_txt: String(r.fieldData['Temps_Privisio_txt'] ?? ''),
-              Km_Privisio: Number(r.fieldData['Km_Privisio'] ?? 0),
-            },
-            portalParadas: statusPoints,
-            portalClientes: Array.from(new Map(
-              statusPoints
-                .filter(point => point.idClient || point.idClientPrint || point.nomEmpresa)
-                .map(point => [point.idClient || point.idClientPrint || point.nomEmpresa, {
-                  recordId: point.recordId,
-                  idClientPrint: point.idClientPrint,
-                  nomEmpresa: point.nomEmpresa,
-                }]),
-            ).values()),
-          })),
+          map(statusPoints => {
+            const fd = r.fieldData as Record<string, unknown>;
+            const rawMatricula = getFieldStr(fd, ['ruta_VEHICLES::Matricula', 'VEHICLES::Matricula', 'Matricula']);
+            const rawPersonal1 = getFieldStr(fd, ['ruta_PERSONAL1::Nom_Complert', 'ruta_PERSONAL1::Nom', 'Nom_Personal_1', 'Id_Personal_1', 'RUTA::Id_Personal_1']);
+            const rawPersonal2 = getFieldStr(fd, ['ruta_PERSONAL2::Nom_Complert', 'ruta_PERSONAL2::Nom', 'Nom_Personal_2', 'Id_Personal_2', 'RUTA::Id_Personal_2']);
+            const rawPersonal3 = getFieldStr(fd, ['ruta_PERSONAL3::Nom_Complert', 'ruta_PERSONAL3::Nom', 'Nom_Personal_3', 'Id_Personal_3', 'RUTA::Id_Personal_3']);
+            const rawData = getFieldStr(fd, ['Data', 'RUTA::Data']);
+
+            return {
+              recordId: r.recordId,
+              modId: r.modId,
+              fieldData: {
+                Id_Ruta: String(fd['Id_Ruta'] ?? ''),
+                Id_Ruta_serial: Number(fd['Id_Ruta_serial'] ?? fd['RUTA::Id_Ruta_serial'] ?? fd['ruta_RUTA::Id_Ruta_serial'] ?? 0),
+                Nom_Personal_1: resolvePersonalName(rawPersonal1),
+                Nom_Personal_2: resolvePersonalName(rawPersonal2),
+                Nom_Personal_3: resolvePersonalName(rawPersonal3),
+                Id_Personal_1: String(fd['Id_Personal_1'] ?? fd['RUTA::Id_Personal_1'] ?? ''),
+                Id_Personal_2: String(fd['Id_Personal_2'] ?? fd['RUTA::Id_Personal_2'] ?? ''),
+                Id_Personal_3: String(fd['Id_Personal_3'] ?? fd['RUTA::Id_Personal_3'] ?? ''),
+                Id_Vehicle: String(fd['Id_Vehicle'] ?? fd['RUTA::Id_Vehicle'] ?? ''),
+                Matricula_Vehicle: rawMatricula || String(fd['Id_Vehicle'] ?? ''),
+                Marca_Model_Vehicle: '',
+                Data: rawData,
+                Temps_Privisio: Number(fd['Temps_Privisio'] ?? fd['RUTA::Temps_Privisio'] ?? fd['ruta_RUTA::Temps_Privisio'] ?? 0),
+                Temps_Privisio_txt: String(fd['Temps_Privisio_txt'] ?? fd['RUTA::Temps_Privisio_txt'] ?? fd['ruta_RUTA::Temps_Privisio_txt'] ?? ''),
+                Km_Privisio: Number(fd['Km_Privisio'] ?? fd['RUTA::Km_Privisio'] ?? fd['ruta_RUTA::Km_Privisio'] ?? 0),
+                Estat: String(fd['Estat'] ?? fd['RUTA::Estat'] ?? fd['ruta_RUTA::Estat'] ?? ''),
+              },
+              portalParadas: statusPoints,
+              portalClientes: Array.from(new Map(
+                statusPoints
+                  .filter(point => point.idClient || point.idClientPrint || point.nomEmpresa)
+                  .map(point => [point.idClient || point.idClientPrint || point.nomEmpresa, {
+                    recordId: point.recordId,
+                    idClientPrint: point.idClientPrint,
+                    nomEmpresa: point.nomEmpresa,
+                  }]),
+              ).values()),
+            };
+          }),
+          switchMap(base => {
+            // Si la matrícula o algún nombre no se pudieron resolver inmediatamente,
+            // consultamos los layouts auxiliares de Personal y Vehicles
+            const fd = r.fieldData as Record<string, unknown>;
+            const idVehicle = String(fd['Id_Vehicle'] ?? fd['RUTA::Id_Vehicle'] ?? '');
+            const needVehicle = !base.fieldData.Matricula_Vehicle || base.fieldData.Matricula_Vehicle.length > 20;
+            const vehicle$ = (needVehicle && idVehicle)
+              ? this.fm.findRecords('Vehicles_Llista', [{ Id_Vehicle: idVehicle }], { limit: 1 }).pipe(
+                  map(vres => {
+                    const vf = vres.response.data?.[0]?.fieldData ?? {};
+                    return getFieldStr(vf, ['Matricula', 'VEHICLES::Matricula']);
+                  }),
+                  catchError(() => of('')),
+                )
+              : of(base.fieldData.Matricula_Vehicle);
+
+            return vehicle$.pipe(
+              map(matricula => {
+                if (matricula) base.fieldData.Matricula_Vehicle = matricula;
+                return base;
+              }),
+            );
+          }),
         );
       }),
     );

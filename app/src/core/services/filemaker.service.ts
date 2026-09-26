@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, tap, switchMap, catchError, timeout } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -106,6 +106,32 @@ export class FileMakerService {
     const qs = params.length ? `?${params.join('&')}` : '';
     const url = `${this.baseUrl}/layouts/${encodeURIComponent(layout)}/records${qs}`;
     return this.http.get<FmFindResponse>(url);
+  }
+
+  listODataRecords<T extends Record<string, unknown>>(
+    table: string,
+    fields: string[],
+    opts: { filter?: string; orderBy?: string } = {},
+  ): Observable<T[]> {
+    const creds = this.session.getCredentials();
+    if (!creds) return throwError(() => new Error('No stored FileMaker credentials'));
+
+    const host = environment.production ? environment.fmHost.replace(/\/$/, '') : '';
+    const url = `${host}/fmi/odata/v4/FEDIR_data/${encodeURIComponent(table)}`;
+    let params = new HttpParams().set('$select', fields.join(','));
+    if (opts.filter) params = params.set('$filter', opts.filter);
+    if (opts.orderBy) params = params.set('$orderby', opts.orderBy);
+
+    const headers = new HttpHeaders({
+      Accept: 'application/json',
+      Authorization: `Basic ${btoa(`${creds.username}:${creds.password}`)}`,
+      'OData-Version': '4.0',
+      'OData-MaxVersion': '4.0',
+    });
+
+    return this.http.get<{ value?: T[] }>(url, { headers, params }).pipe(
+      map(response => response.value ?? []),
+    );
   }
 
   getRecord(layout: string, recordId: string, opts: { portals?: { name: string; offset?: number; limit?: number }[] } = {}): Observable<FmSingleResponse> {

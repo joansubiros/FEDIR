@@ -73,9 +73,13 @@ export interface RutaDetalle {
     Id_Personal_2: string;
     Id_Personal_3: string;
     Id_Vehicle: string;
+    Matricula_Vehicle: string;
+    Marca_Model_Vehicle: string;
     Data: string;
+    Temps_Privisio?: number;
     Temps_Privisio_txt: string;
     Km_Privisio: number;
+    Estat?: string;
   };
   portalParadas: RutaParadaPortal[];
   portalClientes: { recordId: string; idClientPrint: string; nomEmpresa: string }[];

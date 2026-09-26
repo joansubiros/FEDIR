@@ -2,7 +2,7 @@
   <ion-toolbar class="fedir-brand-header fedir-route-toolbar">
     <ion-title>RUTA {{ routeSerialParam || '...' }}</ion-title>
     <ion-buttons slot="end">
-      <ion-button id="info-button" class="fedir-route-info" fill="clear" (click)="showInfo = true" aria-label="Información de la ruta"><ion-icon name="information-circle-outline"></ion-icon></ion-button>
+      <ion-button id="info-button" class="fedir-route-info" fill="clear" (click)="showInfo = true; loadListsForModal()" aria-label="Información de la ruta"><ion-icon name="information-circle-outline"></ion-icon></ion-button>
       <ion-button fill="clear" (click)="router.navigateByUrl('/rutas')" aria-label="Cerrar"><ion-icon name="close-outline"></ion-icon></ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -14,6 +14,12 @@
     <strong>{{ r.fieldData.Data | fedirDate }}</strong>
     <span *ngIf="r.fieldData.Temps_Privisio_txt">{{ r.fieldData.Temps_Privisio_txt }}</span>
     <span *ngIf="r.fieldData.Km_Privisio">{{ r.fieldData.Km_Privisio | number:'1.1-1' }} km</span>
+    <span class="fedir-summary-vehicle" *ngIf="r.fieldData.Matricula_Vehicle">{{ r.fieldData.Matricula_Vehicle }}</span>
+    <span class="fedir-summary-drivers" *ngIf="r.fieldData.Nom_Personal_1 || r.fieldData.Nom_Personal_2 || r.fieldData.Nom_Personal_3">
+      <span *ngIf="r.fieldData.Nom_Personal_1">{{ r.fieldData.Nom_Personal_1 }}</span>
+      <span *ngIf="r.fieldData.Nom_Personal_2"> · {{ r.fieldData.Nom_Personal_2 }}</span>
+      <span *ngIf="r.fieldData.Nom_Personal_3"> · {{ r.fieldData.Nom_Personal_3 }}</span>
+    </span>
   </section>
 
   <section class="fedir-route-actions">
@@ -50,32 +56,92 @@
   <ion-spinner *ngIf="loading$ | async"></ion-spinner>
 
   <!-- INFO POPOVER -->
-  <ion-popover [isOpen]="showInfo" (didDismiss)="showInfo = false" [showBackdrop]="false">
+  <ion-popover [isOpen]="showInfo" (didDismiss)="showInfo = false" [showBackdrop]="true" class="fedir-info-popover">
     <ng-template>
-      <div class="fedir-popover-info">
-        <div class="fedir-popover-header">
-          <span>Información Ruta</span>
-          <ion-button fill="clear" class="fedir-popover-close" (click)="showInfo = false" aria-label="Cerrar información">
+      <div class="fedir-fm-popover">
+        <div class="fedir-fm-popover-header">
+          <span class="fedir-fm-title">Información Ruta</span>
+          <button type="button" class="fedir-fm-close-btn" (click)="showInfo = false" aria-label="Cerrar">
             <ion-icon name="close-outline"></ion-icon>
-          </ion-button>
+          </button>
         </div>
-        <div class="fedir-popover-body">
-          <div class="fedir-popover-row">
-            <span class="fedir-popover-label">Vehículo</span>
-            <span class="fedir-popover-value">{{ r.fieldData.Id_Vehicle || '—' }}</span>
+        <div class="fedir-fm-popover-body">
+          <div class="fedir-fm-row">
+            <span class="fedir-fm-label">Fecha</span>
+            <div class="fedir-fm-field">
+              <span>{{ (ruta.fieldData.Data | fedirDate) || '—' }}</span>
+              <ion-icon name="calendar-outline" class="fedir-fm-field-icon"></ion-icon>
+            </div>
           </div>
-          <div class="fedir-popover-row">
-            <span class="fedir-popover-label">Personal 1</span>
-            <span class="fedir-popover-value">{{ r.fieldData.Nom_Personal_1 || r.fieldData.Id_Personal_1 || '—' }}</span>
+          <div class="fedir-fm-row">
+            <span class="fedir-fm-label">Vehículo</span>
+            <div class="fedir-fm-field">
+              @if (canEditRouteInfo(ruta)) {
+                <ion-select [(ngModel)]="ruta.fieldData.Id_Vehicle" class="fedir-fm-select" interface="popover" placeholder="Seleccionar vehículo">
+                  <ion-select-option value="">—</ion-select-option>
+                  <ion-select-option *ngFor="let v of vehiclesList" [value]="v.id">{{ v.matricula }}</ion-select-option>
+                </ion-select>
+              } @else {
+                <span>{{ ruta.fieldData.Matricula_Vehicle }} ({{ ruta.fieldData.Id_Vehicle }})</span>
+              }
+              <ion-icon name="car-outline" class="fedir-fm-field-icon"></ion-icon>
+            </div>
           </div>
-          <div class="fedir-popover-row">
-            <span class="fedir-popover-label">Personal 2</span>
-            <span class="fedir-popover-value">{{ r.fieldData.Nom_Personal_2 || r.fieldData.Id_Personal_2 || '—' }}</span>
+          <div class="fedir-fm-row">
+            <span class="fedir-fm-label">Personal 1</span>
+            <div class="fedir-fm-field">
+              @if (canEditRouteInfo(ruta)) {
+                <ion-select [(ngModel)]="ruta.fieldData.Id_Personal_1" class="fedir-fm-select" interface="popover" placeholder="Seleccionar personal">
+                  <ion-select-option value="">—</ion-select-option>
+                  <ion-select-option *ngFor="let p of personalList" [value]="p.id">{{ p.name }}</ion-select-option>
+                </ion-select>
+              } @else {
+                <span>{{ ruta.fieldData.Nom_Personal_1 }} ({{ ruta.fieldData.Id_Personal_1 }})</span>
+              }
+              <ion-icon name="person-outline" class="fedir-fm-field-icon"></ion-icon>
+            </div>
           </div>
-          <div class="fedir-popover-row">
-            <span class="fedir-popover-label">Personal 3</span>
-            <span class="fedir-popover-value">{{ r.fieldData.Nom_Personal_3 || r.fieldData.Id_Personal_3 || '—' }}</span>
+          <div class="fedir-fm-row">
+            <span class="fedir-fm-label">Personal 2</span>
+            <div class="fedir-fm-field">
+              @if (canEditRouteInfo(ruta)) {
+                <ion-select [(ngModel)]="ruta.fieldData.Id_Personal_2" class="fedir-fm-select" interface="popover" placeholder="Seleccionar personal">
+                  <ion-select-option value="">—</ion-select-option>
+                  <ion-select-option *ngFor="let p of personalList" [value]="p.id">{{ p.name }}</ion-select-option>
+                </ion-select>
+              } @else {
+                <span>{{ ruta.fieldData.Nom_Personal_2 }} ({{ ruta.fieldData.Id_Personal_2 }})</span>
+              }
+              <ion-icon name="person-outline" class="fedir-fm-field-icon"></ion-icon>
+            </div>
           </div>
+          <div class="fedir-fm-row">
+            <span class="fedir-fm-label">Personal 3</span>
+            <div class="fedir-fm-field">
+              @if (canEditRouteInfo(ruta)) {
+                <ion-select [(ngModel)]="ruta.fieldData.Id_Personal_3" class="fedir-fm-select" interface="popover" placeholder="Seleccionar personal">
+                  <ion-select-option value="">—</ion-select-option>
+                  <ion-select-option *ngFor="let p of personalList" [value]="p.id">{{ p.name }}</ion-select-option>
+                </ion-select>
+              } @else {
+                <span>{{ ruta.fieldData.Nom_Personal_3 }} ({{ ruta.fieldData.Id_Personal_3 }})</span>
+              }
+              <ion-icon name="person-outline" class="fedir-fm-field-icon"></ion-icon>
+            </div>
+          </div>
+
+          @if (canEditRouteInfo(ruta)) {
+            <ion-button expand="block" fill="solid" class="fedir-fm-btn-save ion-margin-top" (click)="saveRouteInfo()" [disabled]="savingInfo">
+              @if (savingInfo) { <ion-spinner slot="start" name="crescent"></ion-spinner> }
+              Guardar
+            </ion-button>
+          }
+
+          <button *ngIf="canOptimizeRoute(ruta)" type="button" class="fedir-fm-btn-optimize" (click)="optimizarRutaFM(ruta)" [disabled]="savingInfo">
+            @if (savingInfo) { <ion-spinner slot="start" name="crescent"></ion-spinner> }
+            <ion-icon name="map-outline"></ion-icon>
+            <span>Optimizar Ruta</span>
+          </button>
         </div>
       </div>
     </ng-template>

@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { RouterModule, Routes } from '@angular/router';
 import { RutasListPage } from './rutas-list.page';
@@ -16,6 +16,6 @@ const routes: Routes = [
 
 @NgModule({
   declarations: [RutasListPage, RutaDetallePage, RutaNewPage],
-  imports: [CommonModule, ReactiveFormsModule, IonicModule, RouterModule.forChild(routes), SharedModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, IonicModule, RouterModule.forChild(routes), SharedModule],
 })
 export class RutasModule {}

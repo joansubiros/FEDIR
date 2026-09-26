@@ -1,10 +1,10 @@
-import { Component, ChangeDetectionStrategy, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { AlertController } from '@ionic/angular';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { catchError, finalize, map } from 'rxjs/operators';
 import { RutaService } from '../../core/services/ruta.service';
 import { FileMakerService } from '../../core/services/filemaker.service';
+import { SessionService } from '../../core/services/session.service';
 import type { RutaListItem } from '../../core/models/fm.models';
 
 @Component({
@@ -30,7 +30,8 @@ export class HomePage implements OnInit {
     private router: Router,
     private rutas: RutaService,
     private fm: FileMakerService,
-    private alertCtrl: AlertController,
+    private session: SessionService,
+    private cdr: ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {
@@ -79,29 +80,21 @@ export class HomePage implements OnInit {
     window.location.href = `whatsapp://send?phone=${phone}&text=${encodeURIComponent(message)}`;
   }
 
-  async logout(): Promise<void> {
-    const alert = await this.alertCtrl.create({
-      header: 'Cerrar sesión',
-      message: '¿Estás seguro de que quieres salir de la aplicación?',
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Salir',
-          role: 'destructive',
-          handler: () => {
-            this.fm.logout().subscribe({
-              next: () => {
-                void this.router.navigateByUrl('/login');
-              },
-              error: () => {
-                void this.router.navigateByUrl('/login');
-              },
-            });
-          },
-        },
-      ],
-    });
-    await alert.present();
+  logout(): void {
+    const salir = window.confirm('¿Deseas cerrar la sesión y salir?');
+    if (!salir) return;
+
+    this.session.clear();
+    try {
+      this.fm.logout().subscribe({
+        error: () => {},
+      });
+    } catch {
+      // Ignorar errores en segundo plano
+    }
+
+    // Redirigir de forma inmediata a la pantalla de login
+    void this.router.navigate(['/auth/login'], { replaceUrl: true });
   }
 
   refrescar(): void {

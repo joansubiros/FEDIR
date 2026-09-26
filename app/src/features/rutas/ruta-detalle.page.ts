@@ -1,8 +1,9 @@
 import { ChangeDetectorRef, Component, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, BehaviorSubject, Subject, combineLatest, of, switchMap, tap, map, startWith, shareReplay, catchError } from 'rxjs';
-import { DireccioService, LrutaService, RutaService } from '../../core/services/ruta.service';
+import { Observable, BehaviorSubject, Subject, combineLatest, of, switchMap, tap, map, startWith, shareReplay, catchError, forkJoin } from 'rxjs';
+import { DireccioService, LrutaService, RutaService, resolvePersonalName } from '../../core/services/ruta.service';
 import { SessionService } from '../../core/services/session.service';
+import { FileMakerService } from '../../core/services/filemaker.service';
 import type { DireccioItem, RutaDetalle, RutaParadaPortal } from '../../core/models/fm.models';
 
 @Component({
@@ -21,13 +22,33 @@ export class RutaDetallePage {
   showAddPoint = false;
   addressQuery = '';
   savingOrder = false;
+  savingInfo = false;
   error: string | null = null;
   routeSerialParam = 0;
+  editData = '';
   private refresh$ = new Subject<void>();
+
+  // Datos para desplegables del popover de info
+  personalList: { id: string; name: string }[] = [];
+  vehiclesList: { id: string; matricula: string }[] = [];
 
   get canReorderPoints(): boolean {
     const username = this.session.getCredentials()?.username?.toLowerCase();
     return username === 'fbellota' || username === 'grodriguez' || username === 'jsubiros';
+  }
+
+  get canEditRoute(): boolean {
+    const username = this.session.getCredentials()?.username?.toLowerCase();
+    return username === 'fbellota' || username === 'grodriguez' || username === 'jsubiros';
+  }
+
+  canEditRouteInfo(ruta: RutaDetalle | null): boolean {
+    if (!this.canEditRoute) return false;
+    if (!ruta) return false;
+    // La ruta es editable si no está finalizada (Estat != 'Finalizada' o similar)
+    const estat = String(ruta.fieldData.Estat || '').toLowerCase();
+    const finalizada = estat.includes('final') || estat.includes('complet') || estat.includes('tancat');
+    return !finalizada;
   }
 
   canAddPoint(ruta: RutaDetalle | null): boolean {
@@ -41,6 +62,11 @@ export class RutaDetallePage {
     return new Date() < limit;
   }
 
+  loadListsForModal(): void {
+    this.loadPersonalList();
+    this.loadVehiclesList();
+  }
+
   constructor(
     private route: ActivatedRoute,
     public router: Router,
@@ -48,6 +74,7 @@ export class RutaDetallePage {
     private lruta: LrutaService,
     private direcciones: DireccioService,
     private session: SessionService,
+    private fm: FileMakerService,
     private changeDetector: ChangeDetectorRef,
   ) {
     this.ruta$ = combineLatest([this.route.paramMap, this.route.queryParamMap, this.refresh$.pipe(startWith(undefined))]).pipe(
@@ -73,6 +100,9 @@ export class RutaDetallePage {
     );
     this.ruta$.subscribe(ruta => {
       this.ruta = ruta;
+      if (ruta) {
+        this.editData = this.formatDateForInput(ruta.fieldData.Data);
+      }
       this.changeDetector.detectChanges();
     });
   }
@@ -115,6 +145,22 @@ export class RutaDetallePage {
 
   nextPending(points: RutaParadaPortal[]): RutaParadaPortal | undefined {
     return points.find(point => point.flagFet !== '1' && point.flagAnulat !== '1');
+  }
+
+  canOptimizeRoute(ruta: RutaDetalle | null): boolean {
+    if (!ruta) return false;
+    const tempsPrivisio = Number(ruta.fieldData.Temps_Privisio ?? 0);
+    const tempsPrivisioTxt = (ruta.fieldData.Temps_Privisio_txt ?? '').trim();
+    const isOptimized = (Number.isFinite(tempsPrivisio) && tempsPrivisio > 0) || tempsPrivisioTxt.length > 0;
+
+    // Aparece si nunca se ha optimizado
+    if (!isOptimized) return true;
+
+    // O si aún no se ha añadido ningún dato a los puntos de recogida
+    const hasPointData = (ruta.portalParadas ?? []).some(
+      p => p.flagFet === '1' || p.flagAnulat === '1'
+    );
+    return !hasPointData;
   }
 
   movePoint(points: RutaParadaPortal[], index: number, direction: -1 | 1): void {
@@ -186,6 +232,43 @@ export class RutaDetallePage {
     this.direcciones.list(30, 0).pipe(catchError(() => of({ items: [], total: 0 }))).subscribe(result => this.addressResults$.next(result.items));
   }
 
+  /** Abre Google Maps Directions con todos los puntos pendientes como waypoints */
+  optimizarMaps(ruta: RutaDetalle | null): void {
+    if (!ruta?.portalParadas?.length) return;
+    const pendientes = ruta.portalParadas.filter(p => p.flagFet !== '1' && p.flagAnulat !== '1');
+    if (pendientes.length < 2) return;
+    const coords = pendientes
+      .map(p => {
+        if (p.latitud != null && p.longitud != null) return `${p.latitud},${p.longitud}`;
+        return '';
+      })
+      .filter(Boolean);
+    if (coords.length < 2) return;
+    const destination = encodeURIComponent(coords[coords.length - 1]);
+    const waypoints = coords.slice(0, -1).map(c => encodeURIComponent(c)).join('|');
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
+    window.open(url, '_blank');
+  }
+
+  /** Ejecuta el script de optimización de FileMaker */
+  optimizarRutaFM(ruta: RutaDetalle | null): void {
+    if (!ruta) return;
+    this.savingInfo = true;
+    this.error = null;
+
+    this.fm.executeScript('Phone_Ruta', 'Ruta_Optima_PSOS', String(ruta.fieldData.Id_Ruta_serial || ruta.fieldData.Id_Ruta)).subscribe({
+      next: () => {
+        this.savingInfo = false;
+        this.refresh$.next();
+      },
+      error: err => {
+        this.savingInfo = false;
+        this.error = err?.error?.messages?.[0]?.message ?? err?.message ?? 'No se pudo optimizar la ruta';
+        this.changeDetector.detectChanges();
+      }
+    });
+  }
+
   addPoint(point: DireccioItem, ruta: RutaDetalle): void {
     if (!this.canAddPoint(ruta)) {
       this.error = 'No tiene permiso para añadir puntos a esta ruta';
@@ -208,23 +291,176 @@ export class RutaDetallePage {
     if (tel) window.open(`tel:${tel}`, '_self');
   }
 
+  private formatDateForInput(value: string | undefined): string {
+    const d = this.parseRouteDate(value);
+    if (!d) return '';
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  private formatDateForFM(inputVal: string): string {
+    if (!inputVal) return '';
+    const parts = inputVal.split('-');
+    if (parts.length === 3 && parts[0].length === 4) {
+      const [yyyy, mm, dd] = parts;
+      return `${mm}/${dd}/${yyyy}`;
+    }
+    return inputVal;
+  }
+
   private parseRouteDate(value: string | undefined): Date | null {
     if (!value) return null;
-    const parts = value.trim().split(/[\/-]/).map(Number);
-    if (parts.length !== 3 || parts.some(part => !Number.isFinite(part))) return null;
-    let year: number;
-    let month: number;
-    let day: number;
-    if (value.includes('-') && value.split('-')[0].length !== 4) {
-      [day, month, year] = parts;
-    } else if (parts[0] > 31) {
-      [year, month, day] = parts;
-    } else {
-      [month, day, year] = parts;
+    const s = value.trim();
+    if (!s) return null;
+
+    let year = 0, month = 0, day = 0;
+    if (s.includes('/')) {
+      const parts = s.split('/').map(Number);
+      if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return null;
+      if (parts[2] > 31) {
+        year = parts[2];
+        if (parts[0] > 12) {
+          day = parts[0]; month = parts[1];
+        } else if (parts[1] > 12) {
+          month = parts[0]; day = parts[1];
+        } else {
+          month = parts[0]; day = parts[1];
+        }
+      } else if (parts[0] > 31) {
+        year = parts[0]; month = parts[1]; day = parts[2];
+      }
+    } else if (s.includes('-')) {
+      const parts = s.split('-').map(Number);
+      if (parts.length !== 3 || parts.some(n => !Number.isFinite(n))) return null;
+      if (s.split('-')[0].length === 4) {
+        year = parts[0]; month = parts[1]; day = parts[2];
+      } else {
+        day = parts[0]; month = parts[1]; year = parts[2];
+      }
     }
+    if (!year || !month || !day) return null;
     if (year < 100) year += 2000;
     const date = new Date(year, month - 1, day);
     return date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day ? date : null;
+  }
+
+  private loadPersonalList(): void {
+    this.fm.listODataRecords<Record<string, unknown>>(
+      'PERSONAL',
+      ['Id_Personal', 'Nom_Complert'],
+      { filter: 'Flag_Actiu eq 1 and Flag_Xofer eq 1', orderBy: 'Nom_Complert asc' },
+    ).subscribe({
+      next: records => {
+        this.personalList = records
+          .map(record => ({
+            id: String(record['Id_Personal'] ?? '').trim(),
+            name: String(record['Nom_Complert'] ?? '').trim(),
+          }))
+          .filter(person => person.id && person.name);
+        this.keepCurrentPersonalOptions();
+        this.syncPersonalSelection();
+        this.changeDetector.detectChanges();
+      },
+      error: () => {
+        this.keepCurrentPersonalOptions();
+        this.changeDetector.detectChanges();
+      },
+    });
+  }
+
+  private keepCurrentPersonalOptions(): void {
+    if (!this.ruta) return;
+    const current = [
+      [this.ruta.fieldData.Id_Personal_1, this.ruta.fieldData.Nom_Personal_1],
+      [this.ruta.fieldData.Id_Personal_2, this.ruta.fieldData.Nom_Personal_2],
+      [this.ruta.fieldData.Id_Personal_3, this.ruta.fieldData.Nom_Personal_3],
+    ];
+    for (const [id, name] of current) {
+      if (id && !this.personalList.some(person => person.id.toLowerCase() === id.toLowerCase())) {
+        this.personalList.push({ id, name: name || id });
+      }
+    }
+  }
+
+  private syncPersonalSelection(): void {
+    if (!this.ruta || !this.personalList.length) return;
+    const matchId = (val: string | undefined): string => {
+      if (!val) return '';
+      const lower = val.trim().toLowerCase();
+      const found = this.personalList.find(p => p.id.toLowerCase() === lower);
+      return found ? found.id : val;
+    };
+    this.ruta.fieldData.Id_Personal_1 = matchId(this.ruta.fieldData.Id_Personal_1);
+    this.ruta.fieldData.Id_Personal_2 = matchId(this.ruta.fieldData.Id_Personal_2);
+    this.ruta.fieldData.Id_Personal_3 = matchId(this.ruta.fieldData.Id_Personal_3);
+  }
+
+  private loadVehiclesList(): void {
+    this.fm.listODataRecords<Record<string, unknown>>('VEHICLES', ['Id_Vehicle', 'Matricula'], { orderBy: 'Matricula asc' }).subscribe({
+      next: records => {
+        this.vehiclesList = records
+          .map(record => ({
+            id: String(record['Id_Vehicle'] ?? '').trim(),
+            matricula: String(record['Matricula'] ?? '').trim(),
+          }))
+          .filter(vehicle => vehicle.id && vehicle.matricula)
+          .sort((a, b) => a.matricula.localeCompare(b.matricula));
+        this.keepCurrentVehicleOption();
+        this.syncVehicleSelection();
+        this.changeDetector.detectChanges();
+      },
+      error: () => {
+        this.keepCurrentVehicleOption();
+        this.changeDetector.detectChanges();
+      },
+    });
+  }
+
+  private keepCurrentVehicleOption(): void {
+    const id = this.ruta?.fieldData.Id_Vehicle;
+    const matricula = this.ruta?.fieldData.Matricula_Vehicle;
+    if (id && matricula && !this.vehiclesList.some(vehicle => vehicle.id.toLowerCase() === id.toLowerCase())) {
+      this.vehiclesList.unshift({ id, matricula });
+    }
+  }
+
+  private syncVehicleSelection(): void {
+    if (!this.ruta || !this.vehiclesList.length) return;
+    const val = (this.ruta.fieldData.Id_Vehicle || '').trim();
+    if (!val) return;
+    const lower = val.toLowerCase();
+    const found = this.vehiclesList.find(v => v.id.toLowerCase() === lower || v.matricula.toLowerCase() === lower);
+    if (found) {
+      this.ruta.fieldData.Id_Vehicle = found.id;
+    }
+  }
+
+  saveRouteInfo(): void {
+    if (!this.ruta || !this.canEditRouteInfo(this.ruta)) return;
+    this.savingInfo = true;
+    this.error = null;
+
+    const fieldData = {
+      Id_Vehicle: this.ruta.fieldData.Id_Vehicle,
+      Id_Personal_1: this.ruta.fieldData.Id_Personal_1,
+      Id_Personal_2: this.ruta.fieldData.Id_Personal_2,
+      Id_Personal_3: this.ruta.fieldData.Id_Personal_3,
+    };
+
+    this.fm.updateRecord('Phone_Ruta', this.ruta.recordId, fieldData, { modId: this.ruta.modId }).subscribe({
+      next: () => {
+        this.savingInfo = false;
+        this.showInfo = false;
+        this.refresh$.next();
+      },
+      error: err => {
+        this.savingInfo = false;
+        this.error = err?.error?.messages?.[0]?.message ?? err?.message ?? 'No se pudo guardar la ruta';
+        this.changeDetector.detectChanges();
+      }
+    });
   }
 }
 
