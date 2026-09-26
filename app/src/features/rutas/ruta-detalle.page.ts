@@ -147,6 +147,11 @@ export class RutaDetallePage {
     return points.find(point => point.flagFet !== '1' && point.flagAnulat !== '1');
   }
 
+  countPending(points: RutaParadaPortal[]): number {
+    if (!points?.length) return 0;
+    return points.filter(point => point.flagFet !== '1' && point.flagAnulat !== '1').length;
+  }
+
   canOptimizeRoute(ruta: RutaDetalle | null): boolean {
     if (!ruta) return false;
     const tempsPrivisio = Number(ruta.fieldData.Temps_Privisio ?? 0);

@@ -201,9 +201,38 @@ export class RutaService {
                 )
               : of(base.fieldData.Matricula_Vehicle);
 
-            return vehicle$.pipe(
-              map(matricula => {
+            const needEstat = !base.fieldData.Estat;
+            const filter = base.fieldData.Id_Ruta
+              ? `Id_Ruta eq '${base.fieldData.Id_Ruta}'`
+              : base.fieldData.Id_Ruta_serial
+                ? `Id_Ruta_serial eq ${base.fieldData.Id_Ruta_serial}`
+                : '';
+            const estat$ = (needEstat && filter)
+              ? this.fm.listODataRecords<Record<string, unknown>>('RUTA', ['Estat'], { filter }).pipe(
+                  map(records => String(records[0]?.['Estat'] ?? '').trim()),
+                  catchError(() => of('')),
+                )
+              : of(base.fieldData.Estat);
+
+            return forkJoin({ matricula: vehicle$, estat: estat$ }).pipe(
+              map(({ matricula, estat }) => {
                 if (matricula) base.fieldData.Matricula_Vehicle = matricula;
+                if (estat) {
+                  base.fieldData.Estat = estat;
+                } else if (!base.fieldData.Estat) {
+                  const total = base.portalParadas.length;
+                  const done = base.portalParadas.filter(p => p.flagFet === '1' || p.flagAnulat === '1').length;
+                  const pending = total - done;
+                  if (total === 0) {
+                    base.fieldData.Estat = 'Pendiente';
+                  } else if (pending === 0) {
+                    base.fieldData.Estat = 'Realizado';
+                  } else if (done > 0) {
+                    base.fieldData.Estat = 'Parcial';
+                  } else {
+                    base.fieldData.Estat = 'Iniciado';
+                  }
+                }
                 return base;
               }),
             );

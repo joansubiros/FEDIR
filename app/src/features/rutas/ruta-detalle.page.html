@@ -1,6 +1,16 @@
 <ion-header>
   <ion-toolbar class="fedir-brand-header fedir-route-toolbar">
-    <ion-title>RUTA {{ routeSerialParam || '...' }}</ion-title>
+    <ion-title>
+      <div class="fedir-route-header-title">
+        <span>RUTA {{ (ruta$ | async)?.fieldData?.Id_Ruta_serial || routeSerialParam || '...' }}</span>
+        <ion-badge
+          *ngIf="(ruta$ | async)?.fieldData?.Estat as estat"
+          class="fedir-route-status-badge"
+          [attr.data-status]="estat.toLowerCase()">
+          {{ estat }}
+        </ion-badge>
+      </div>
+    </ion-title>
     <ion-buttons slot="end">
       <ion-button id="info-button" class="fedir-route-info" fill="clear" (click)="showInfo = true; loadListsForModal()" aria-label="Información de la ruta"><ion-icon name="information-circle-outline"></ion-icon></ion-button>
       <ion-button fill="clear" (click)="router.navigateByUrl('/rutas')" aria-label="Cerrar"><ion-icon name="close-outline"></ion-icon></ion-button>
@@ -32,7 +42,14 @@
 
   <ion-text *ngIf="error" color="danger"><p class="fedir-route-error">{{ error }}</p></ion-text>
   <ion-list class="fedir-route-list">
-    <ion-list-header>Puntos ({{ r.portalParadas.length }})</ion-list-header>
+    <ion-list-header class="fedir-points-header">
+      <div class="fedir-points-header-inner">
+        <span>Puntos ({{ r.portalParadas.length }})</span>
+        <ion-badge *ngIf="countPending(r.portalParadas) > 0" class="fedir-pending-badge">
+          {{ countPending(r.portalParadas) }} pend.
+        </ion-badge>
+      </div>
+    </ion-list-header>
     <ion-item *ngFor="let p of r.portalParadas; let i = index" class="fedir-route-point" [class.fedir-point-done]="p.flagFet === '1' && p.flagAnulat !== '1'" [class.fedir-point-cancelled]="p.flagAnulat === '1'">
       <div class="fedir-point-order" slot="start">{{ i + 1 }}</div>
       <ion-label class="fedir-point-label">
@@ -66,6 +83,13 @@
           </button>
         </div>
         <div class="fedir-fm-popover-body">
+          <div class="fedir-fm-row" *ngIf="ruta.fieldData.Estat">
+            <span class="fedir-fm-label">Estado</span>
+            <div class="fedir-fm-field">
+              <span class="fedir-fm-status-text">{{ ruta.fieldData.Estat }}</span>
+              <ion-icon name="flag-outline" class="fedir-fm-field-icon"></ion-icon>
+            </div>
+          </div>
           <div class="fedir-fm-row">
             <span class="fedir-fm-label">Fecha</span>
             <div class="fedir-fm-field">

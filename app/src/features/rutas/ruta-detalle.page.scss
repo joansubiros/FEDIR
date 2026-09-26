@@ -8,6 +8,29 @@
   text-align: left;
 }
 
+.fedir-route-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fedir-route-status-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+
+  &[data-status="realizado"] { background: #16a34a; border-color: #22c55e; }
+  &[data-status="iniciado"] { background: #0284c7; border-color: #38bdf8; }
+  &[data-status="parcial"] { background: #d97706; border-color: #f59e0b; }
+  &[data-status="pendiente"] { background: #64748b; border-color: #94a3b8; }
+  &[data-status="cancelado"] { background: #dc2626; border-color: #ef4444; }
+}
+
 .fedir-route-toolbar ion-button {
   --color: #ffffff;
   color: #ffffff;
@@ -52,6 +75,23 @@
 .fedir-route-list {
   margin: 0;
   background: transparent;
+}
+
+.fedir-points-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fedir-pending-badge {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #d97706;
+  color: #fff;
+  border: 1px solid #f59e0b;
 }
 
 .fedir-route-point {
