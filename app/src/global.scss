@@ -153,6 +153,11 @@ ion-header ion-toolbar ion-searchbar {
   --border-width: 0 0 2px 0;
 }
 
+.fedir-rutas-list ion-item.fedir-route-today {
+  --background: #d9f3fc;
+  --border-color: rgba(16, 132, 189, 0.4);
+}
+
 .fedir-rutas-list ion-label h2,
 .fedir-rutas-list .fedir-route-number {
   color: var(--ion-text-color);

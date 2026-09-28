@@ -102,11 +102,23 @@ export class HomePage implements OnInit {
   }
 
   isToday(data: string): boolean {
-    return this.formatDateKey(new Date(data)) === this.todayKey;
+    if (!data) return false;
+    const d = new Date(data);
+    if (!isNaN(d.getTime())) {
+      return this.formatDateKey(d) === this.todayKey;
+    }
+    const parts = data.split(/[\/\-]/);
+    if (parts.length === 3) {
+      const d2 = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+      if (!isNaN(d2.getTime())) {
+        return this.formatDateKey(d2) === this.todayKey;
+      }
+    }
+    return false;
   }
 
   private formatDateKey(d: Date): string {
-    if (isNaN(d.getTime())) return '';
+    if (!d || isNaN(d.getTime())) return '';
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 }

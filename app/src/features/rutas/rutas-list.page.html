@@ -3,7 +3,7 @@
   <ion-refresher slot="fixed" (ionRefresh)="doRefresh($event)"><ion-refresher-content></ion-refresher-content></ion-refresher>
   <ng-container *ngIf="items$ | async as items">
     <ion-list>
-      <ion-item *ngFor="let r of items" [routerLink]="['/rutas', r.recordId]" [queryParams]="{ serial: r.idRutaSerial }" detail>
+      <ion-item *ngFor="let r of items" [class.fedir-route-today]="isToday(r.data)" [routerLink]="['/rutas', r.recordId]" [queryParams]="{ serial: r.idRutaSerial }" detail>
         <ion-label>
           <h2><span class="fedir-route-number">Ruta {{ r.idRutaSerial }}</span> · {{ r.data | fedirDate }}</h2>
           <p><span class="fedir-points-number">{{ r.countPunts }}</span> puntos · {{ r.matricula || '—' }} · {{ r.countPuntsPendents }} pendientes</p>

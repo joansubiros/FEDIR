@@ -18,6 +18,9 @@ export class RutasListPage {
   hasMore$ = new BehaviorSubject<boolean>(true);
   total = 0;
 
+  today = new Date();
+  private todayKey = this.formatDateKey(this.today);
+
   constructor(private rutas: RutaService) {
     this.items$ = this.page$.pipe(
       tap(() => this.loading$.next(true)),
@@ -47,6 +50,27 @@ export class RutasListPage {
   doRefresh(ev: CustomEvent): void {
     this.page$.next(0);
     setTimeout(() => (ev.target as HTMLIonRefresherElement).complete(), 600);
+  }
+
+  isToday(data: string): boolean {
+    if (!data) return false;
+    const d = new Date(data);
+    if (!isNaN(d.getTime())) {
+      return this.formatDateKey(d) === this.todayKey;
+    }
+    const parts = data.split(/[\/\-]/);
+    if (parts.length === 3) {
+      const d2 = new Date(`${parts[1]}/${parts[0]}/${parts[2]}`);
+      if (!isNaN(d2.getTime())) {
+        return this.formatDateKey(d2) === this.todayKey;
+      }
+    }
+    return false;
+  }
+
+  private formatDateKey(d: Date): string {
+    if (!d || isNaN(d.getTime())) return '';
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }
 }
 
