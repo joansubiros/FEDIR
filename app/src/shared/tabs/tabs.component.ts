@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 
@@ -9,9 +9,13 @@ import { filter } from 'rxjs/operators';
   standalone: false,
 })
 export class TabsComponent {
+  private router = inject(Router);
+
   active = '';
 
-  constructor(private router: Router) {
+  constructor() {
+    const router = this.router;
+
     this.active = this.toTab(router.url);
     this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: unknown) => {
       this.active = this.toTab((e as NavigationEnd).urlAfterRedirects);

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { LoadingController, ToastController } from '@ionic/angular';
@@ -14,6 +14,14 @@ import { UBICACIONES_ARG } from '../../core/data/ubicaciones-arg';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProveedorNewPage {
+  private fb = inject(FormBuilder);
+  private fm = inject(FileMakerService);
+  private queue = inject(WriteQueueService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+  private loadingCtrl = inject(LoadingController);
+  private toastCtrl = inject(ToastController);
+
   readonly provinciasList = Object.keys(UBICACIONES_ARG);
 
   readonly horasList: string[] = (() => {
@@ -51,15 +59,7 @@ export class ProveedorNewPage {
   saving = false;
   error: string | null = null;
 
-  constructor(
-    private fb: FormBuilder,
-    private fm: FileMakerService,
-    private queue: WriteQueueService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-    private loadingCtrl: LoadingController,
-    private toastCtrl: ToastController,
-  ) {
+  constructor() {
     this.form.get('Provincia')?.valueChanges.subscribe(prov => {
       this.cargarPoblaciones(prov);
     });

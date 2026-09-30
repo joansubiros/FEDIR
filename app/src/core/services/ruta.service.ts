@@ -1,29 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, concatMap, forkJoin, map, of, switchMap, throwError } from 'rxjs';
 import { FileMakerService } from '../../core/services/filemaker.service';
+import { SessionService } from '../../core/services/session.service';
+import { PersonalService, type PersonalItem } from './personal.service';
 import type { RutaListItem, RutaDetalle, LrutaDetalle, DireccioItem } from '../../core/models/fm.models';
-
-// Diccionario de personal conocido por UUID / usuario para resolución inmediata
-const KNOWN_PERSONAL: Record<string, string> = {
-  '35bd3e35-2fae-e94f-ad97-5008af6f099b': 'Guadalupe Rodríguez',
-  '80c8dda9-bd67-9745-ad7e-504fed2c9902': 'Bruno Di Mauro',
-  'c8492db0-fd3a-ea40-bb5e-2da3548a1b97': 'Thomas Garmendia',
-  '6c0a90c8-f694-274e-8625-754c40b70b5b': 'Bruno Di Mauro',
-  'b4b70ba2-89da-c942-9e88-414aaea922f0': 'Thomas Garmendia',
-  'grodriguez': 'Guadalupe Rodríguez',
-  'mbarbitta': 'Matías Barbitta',
-  'scoronel': 'Sergio Coronel',
-  'bdimauro': 'Bruno Di Mauro',
-  'tgarmendia': 'Thomas Garmendia',
-};
-
-export const resolvePersonalName = (val: unknown): string => {
-  if (!val) return '';
-  const str = String(val).trim();
-  const lower = str.toLowerCase();
-  if (KNOWN_PERSONAL[lower]) return KNOWN_PERSONAL[lower];
-  return str;
-};
 
 const getFieldStr = (data: Record<string, unknown>, names: string[]): string => {
   for (const n of names) {
@@ -44,7 +24,9 @@ const getFieldStr = (data: Record<string, unknown>, names: string[]): string => 
 
 @Injectable({ providedIn: 'root' })
 export class RutaService {
-  constructor(private fm: FileMakerService) {}
+  private fm = inject(FileMakerService);
+  private personal = inject(PersonalService);
+
 
   list(limit = 50, offset = 0): Observable<{ items: RutaListItem[]; total: number }> {
     // Orden descendente por fecha: las rutas más recientes aparecen primero.
@@ -147,9 +129,9 @@ export class RutaService {
           map(statusPoints => {
             const fd = r.fieldData as Record<string, unknown>;
             const rawMatricula = getFieldStr(fd, ['ruta_VEHICLES::Matricula', 'VEHICLES::Matricula', 'Matricula']);
-            const rawPersonal1 = getFieldStr(fd, ['ruta_PERSONAL1::Nom_Complert', 'ruta_PERSONAL1::Nom', 'Nom_Personal_1', 'Id_Personal_1', 'RUTA::Id_Personal_1']);
-            const rawPersonal2 = getFieldStr(fd, ['ruta_PERSONAL2::Nom_Complert', 'ruta_PERSONAL2::Nom', 'Nom_Personal_2', 'Id_Personal_2', 'RUTA::Id_Personal_2']);
-            const rawPersonal3 = getFieldStr(fd, ['ruta_PERSONAL3::Nom_Complert', 'ruta_PERSONAL3::Nom', 'Nom_Personal_3', 'Id_Personal_3', 'RUTA::Id_Personal_3']);
+            const rawPersonal1 = getFieldStr(fd, ['ruta_PERSONAL1::Nom_Compllet', 'ruta_PERSONAL1::Nom', 'Nom_Personal_1', 'Id_Personal_1', 'RUTA::Id_Personal_1']);
+            const rawPersonal2 = getFieldStr(fd, ['ruta_PERSONAL2::Nom_Compllet', 'ruta_PERSONAL2::Nom', 'Nom_Personal_2', 'Id_Personal_2', 'RUTA::Id_Personal_2']);
+            const rawPersonal3 = getFieldStr(fd, ['ruta_PERSONAL3::Nom_Compllet', 'ruta_PERSONAL3::Nom', 'Nom_Personal_3', 'Id_Personal_3', 'RUTA::Id_Personal_3']);
             const rawData = getFieldStr(fd, ['Data', 'RUTA::Data']);
 
             return {
@@ -158,9 +140,9 @@ export class RutaService {
               fieldData: {
                 Id_Ruta: String(fd['Id_Ruta'] ?? ''),
                 Id_Ruta_serial: Number(fd['Id_Ruta_serial'] ?? fd['RUTA::Id_Ruta_serial'] ?? fd['ruta_RUTA::Id_Ruta_serial'] ?? 0),
-                Nom_Personal_1: resolvePersonalName(rawPersonal1),
-                Nom_Personal_2: resolvePersonalName(rawPersonal2),
-                Nom_Personal_3: resolvePersonalName(rawPersonal3),
+                Nom_Personal_1: rawPersonal1,
+                Nom_Personal_2: rawPersonal2,
+                Nom_Personal_3: rawPersonal3,
                 Id_Personal_1: String(fd['Id_Personal_1'] ?? fd['RUTA::Id_Personal_1'] ?? ''),
                 Id_Personal_2: String(fd['Id_Personal_2'] ?? fd['RUTA::Id_Personal_2'] ?? ''),
                 Id_Personal_3: String(fd['Id_Personal_3'] ?? fd['RUTA::Id_Personal_3'] ?? ''),
@@ -201,6 +183,21 @@ export class RutaService {
                 )
               : of(base.fieldData.Matricula_Vehicle);
 
+            // Los nombres de personal siempre se resuelven contra la tabla PERSONAL.
+            const personalKeys = [
+              base.fieldData.Nom_Personal_1,
+              base.fieldData.Nom_Personal_2,
+              base.fieldData.Nom_Personal_3,
+            ];
+            const personal$ = this.personal.resolveNames(personalKeys).pipe(
+              map(names => {
+                const slots = ['Nom_Personal_1', 'Nom_Personal_2', 'Nom_Personal_3'] as const;
+                personalKeys.forEach((key, i) => {
+                  base.fieldData[slots[i]] = names[i] || key;
+                });
+              }),
+            );
+
             const needEstat = !base.fieldData.Estat;
             const filter = base.fieldData.Id_Ruta
               ? `Id_Ruta eq '${base.fieldData.Id_Ruta}'`
@@ -214,7 +211,7 @@ export class RutaService {
                 )
               : of(base.fieldData.Estat);
 
-            return forkJoin({ matricula: vehicle$, estat: estat$ }).pipe(
+            return forkJoin({ matricula: vehicle$, estat: estat$, personal: personal$ }).pipe(
               map(({ matricula, estat }) => {
                 if (matricula) base.fieldData.Matricula_Vehicle = matricula;
                 if (estat) {
@@ -257,7 +254,8 @@ export class RutaService {
 
 @Injectable({ providedIn: 'root' })
 export class LrutaService {
-  constructor(private fm: FileMakerService) {}
+  private fm = inject(FileMakerService);
+
 
   get(recordId: string): Observable<LrutaDetalle> {
     return this.fm.getRecord('Phone_LRuta', recordId).pipe(
@@ -342,59 +340,210 @@ export class LrutaService {
 
 @Injectable({ providedIn: 'root' })
 export class DireccioService {
-  constructor(private fm: FileMakerService) {}
+  private fm = inject(FileMakerService);
+  private personal = inject(PersonalService);
+  private session = inject(SessionService);
+
+  private readonly devUsers = ['fbellota', 'grodriguez', 'jsubiros'];
+
+  getPersonalMap(): Observable<Map<string, string>> {
+    return this.personal.getPersonalMap();
+  }
+
+  getDriversList(): Observable<PersonalItem[]> {
+    return this.personal.getDrivers();
+  }
+
+  private getCurrentUsername(): string | null {
+    const creds = this.session.getCredentials();
+    if (!creds) return null;
+    return creds.username.toLowerCase();
+  }
+
+  private isDeveloper(): boolean {
+    const username = this.getCurrentUsername();
+    return username !== null && this.devUsers.includes(username);
+  }
+
+  private getCurrentUserId(): Observable<string | null> {
+    const username = this.getCurrentUsername();
+    if (username === null) return of(null);
+    if (this.devUsers.includes(username)) return of(null); // developers see all
+    return this.fm.listODataRecords<Record<string, unknown>>(
+      'PERSONAL',
+      ['Id_Personal', 'Usuari_Nom'],
+      { filter: `Usuari_Nom eq '${username}'` }
+    ).pipe(
+      map(records => {
+        const record = records.find(r => String(r['Usuari_Nom']).toLowerCase() === username);
+        return record ? String(record['Id_Personal'] || '') : '';
+      }),
+      switchMap(id => (id ? of(id) : of(null)))
+    );
+  }
 
   search(query: string, limit = 50, offset = 0): Observable<{ items: DireccioItem[]; total: number }> {
+    const userId$ = this.getCurrentUserId();
     const q: Record<string, unknown>[] = query
       ? [
           { 'Nom_Direccio': `*${query}*` },
-          { 'Direccio': `*${query}*` },
-          { 'Poblacio': `*${query}*` },
-          { 'Barri': `*${query}*` },
-          { 'Provincia': `*${query}*` },
+          { 'Empresa': `*${query}*` },
           { 'Busca': `*${query}*` },
         ]
       : [{}];
-    return this.fm.findRecords('Phone_Ldir_Llista', q, { limit, offset }).pipe(
-      map(res => ({
-        total: res.response.dataInfo.foundCount,
-        items: res.response.data.map(r => ({
-          recordId: r.recordId,
-          modId: r.modId,
-          idDireccio: String(r.fieldData['Id_Direccio'] ?? ''),
-          nomDireccio: String(r.fieldData['Nom_Direccio'] ?? ''),
-          direccio: String(r.fieldData['Direccio'] ?? ''),
-          poblacio: String(r.fieldData['Poblacio'] ?? ''),
-          barri: String(r.fieldData['Barri'] ?? ''),
-          provincia: String(r.fieldData['Provincia'] ?? ''),
-          empresa: String(r.fieldData['Empresa'] ?? ''),
-          listContactes: String(r.fieldData['List_Contactes'] ?? ''),
-          etiquetaProv: String(r.fieldData['Etiqueta_Prov'] ?? ''),
-          etiquetaDireccio: String(r.fieldData['Etiqueta_Direccio'] ?? ''),
-        })),
-      })),
+    return userId$.pipe(
+      switchMap(userId => {
+        const queryWithUser = userId
+          ? q.map(item => ({ ...item, Id_Xofer: userId }))
+          : q;
+        return this.fm.findRecords('Ldir_Llista', queryWithUser, { limit, offset }).pipe(
+          switchMap(res => {
+            const items: DireccioItem[] = res.response.data.map(r => ({
+              recordId: r.recordId,
+              modId: r.modId,
+              idDireccio: getFieldStr(r.fieldData, ['Id_Direccio_serial', 'Id_Direccio']),
+              nomDireccio: getFieldStr(r.fieldData, ['Nom_Direccio']),
+              direccio: getFieldStr(r.fieldData, ['Direccio']),
+              poblacio: getFieldStr(r.fieldData, ['Poblacio']),
+              barri: getFieldStr(r.fieldData, ['Barri']),
+              provincia: getFieldStr(r.fieldData, ['Provincia']),
+              empresa: getFieldStr(r.fieldData, ['Empresa']),
+              listContactes: getFieldStr(r.fieldData, ['List_Contactes']),
+              tel1: getFieldStr(r.fieldData, ['Tel_1']),
+              etiquetaProv: getFieldStr(r.fieldData, ['Etiqueta_Prov']),
+              etiquetaDireccio: getFieldStr(r.fieldData, ['Etiqueta_Direccio']),
+              idXofer: getFieldStr(r.fieldData, ['Id_Xofer']),
+              nomXofer: getFieldStr(r.fieldData, ['Nom_Compllet']),
+            }));
+            return this.enrichWithAddressItems(items).pipe(
+              map(enrichedItems => ({ total: res.response.dataInfo.foundCount, items: enrichedItems }))
+            );
+          })
+        );
+      })
     );
   }
 
   list(limit = 50, offset = 0): Observable<{ items: DireccioItem[]; total: number }> {
-    return this.fm.listRecords('Phone_Ldir_Llista', { limit, offset }).pipe(
-      map(res => ({
-        total: res.response.dataInfo.totalRecordCount,
-        items: res.response.data.map(r => ({
-          recordId: r.recordId,
-          modId: r.modId,
-          idDireccio: String(r.fieldData['Id_Direccio'] ?? ''),
-          nomDireccio: String(r.fieldData['Nom_Direccio'] ?? ''),
-          direccio: String(r.fieldData['Direccio'] ?? ''),
-          poblacio: String(r.fieldData['Poblacio'] ?? ''),
-          barri: String(r.fieldData['Barri'] ?? ''),
-          provincia: String(r.fieldData['Provincia'] ?? ''),
-          empresa: String(r.fieldData['Empresa'] ?? ''),
-          listContactes: String(r.fieldData['List_Contactes'] ?? ''),
-          etiquetaProv: String(r.fieldData['Etiqueta_Prov'] ?? ''),
-          etiquetaDireccio: String(r.fieldData['Etiqueta_Direccio'] ?? ''),
-        })),
-      })),
+    return this.getCurrentUserId().pipe(
+      switchMap(userId => {
+        if (userId) {
+          // Non-developer: use find with Id_Xofer filter
+          return this.fm.findRecords('Ldir_Llista', [{ Id_Xofer: userId }], { limit, offset }).pipe(
+            switchMap(res => {
+              const items: DireccioItem[] = res.response.data.map(r => ({
+                recordId: r.recordId,
+                modId: r.modId,
+                idDireccio: getFieldStr(r.fieldData, ['Id_Direccio_serial', 'Id_Direccio']),
+                nomDireccio: getFieldStr(r.fieldData, ['Nom_Direccio']),
+                direccio: getFieldStr(r.fieldData, ['Direccio']),
+                poblacio: getFieldStr(r.fieldData, ['Poblacio']),
+                barri: getFieldStr(r.fieldData, ['Barri']),
+                provincia: getFieldStr(r.fieldData, ['Provincia']),
+                empresa: getFieldStr(r.fieldData, ['Empresa']),
+                listContactes: getFieldStr(r.fieldData, ['List_Contactes']),
+                tel1: getFieldStr(r.fieldData, ['Tel_1']),
+                etiquetaProv: getFieldStr(r.fieldData, ['Etiqueta_Prov']),
+                etiquetaDireccio: getFieldStr(r.fieldData, ['Etiqueta_Direccio']),
+                idXofer: getFieldStr(r.fieldData, ['Id_Xofer']),
+                nomXofer: getFieldStr(r.fieldData, ['Nom_Compllet']),
+              }));
+              return this.enrichWithAddressItems(items).pipe(
+                map(enrichedItems => ({ total: res.response.dataInfo.foundCount, items: enrichedItems }))
+              );
+            })
+          );
+        }
+        // Developer: show all records
+        return this.fm.listRecords('Ldir_Llista', { limit, offset }).pipe(
+          switchMap(res => {
+            const items: DireccioItem[] = res.response.data.map(r => ({
+              recordId: r.recordId,
+              modId: r.modId,
+              idDireccio: getFieldStr(r.fieldData, ['Id_Direccio_serial', 'Id_Direccio']),
+              nomDireccio: getFieldStr(r.fieldData, ['Nom_Direccio']),
+              direccio: getFieldStr(r.fieldData, ['Direccio']),
+              poblacio: getFieldStr(r.fieldData, ['Poblacio']),
+              barri: getFieldStr(r.fieldData, ['Barri']),
+              provincia: getFieldStr(r.fieldData, ['Provincia']),
+              empresa: getFieldStr(r.fieldData, ['Empresa']),
+              listContactes: getFieldStr(r.fieldData, ['List_Contactes']),
+              tel1: getFieldStr(r.fieldData, ['Tel_1']),
+              etiquetaProv: getFieldStr(r.fieldData, ['Etiqueta_Prov']),
+              etiquetaDireccio: getFieldStr(r.fieldData, ['Etiqueta_Direccio']),
+              idXofer: getFieldStr(r.fieldData, ['Id_Xofer']),
+              nomXofer: getFieldStr(r.fieldData, ['Nom_Compllet']),
+            }));
+            return this.enrichWithAddressItems(items).pipe(
+              map(enrichedItems => ({ total: res.response.dataInfo.totalRecordCount, items: enrichedItems }))
+            );
+          })
+        );
+      })
     );
+  }
+
+  private enrichWithAddressItems(items: DireccioItem[]): Observable<DireccioItem[]> {
+    if (!items.length) return of(items);
+    const recordIds = items.map(i => i.recordId);
+    return forkJoin(
+        recordIds.map(id => this.fm.getRecord('Phone_Ldir_Llista', id).pipe(
+          catchError(() => of(null))
+        ))
+    ).pipe(
+      map(results => {
+        const addressMap = new Map<string, {
+          direccio: string; poblacio: string; barri: string; provincia: string; empresa: string;
+          listContactes: string; etiquetaProv: string; etiquetaDireccio: string;
+        }>();
+        results.forEach((res, idx) => {
+          const recordId = recordIds[idx];
+          if (res?.response?.data?.[0]?.fieldData) {
+            const fd = res.response.data[0].fieldData;
+            addressMap.set(recordId, {
+              direccio: getFieldStr(fd, ['Direccio']),
+              poblacio: getFieldStr(fd, ['Poblacio']),
+              barri: getFieldStr(fd, ['Barri']),
+              provincia: getFieldStr(fd, ['Provincia']),
+              empresa: getFieldStr(fd, ['Empresa']),
+              listContactes: getFieldStr(fd, ['List_Contactes']),
+              etiquetaProv: getFieldStr(fd, ['Etiqueta_Prov']),
+              etiquetaDireccio: getFieldStr(fd, ['Etiqueta_Direccio']),
+            });
+          }
+        });
+        return items.map(item => {
+          const addr = addressMap.get(item.recordId);
+          return {
+            ...item,
+            direccio: (addr?.direccio && addr.direccio !== item.nomDireccio) ? addr.direccio : item.direccio,
+            poblacio: addr?.poblacio || item.poblacio,
+            barri: addr?.barri || item.barri,
+            provincia: addr?.provincia || item.provincia,
+            empresa: addr?.empresa || item.empresa,
+            listContactes: addr?.listContactes || item.listContactes,
+            etiquetaProv: addr?.etiquetaProv || item.etiquetaProv,
+            etiquetaDireccio: addr?.etiquetaDireccio || item.etiquetaDireccio,
+          };
+        });
+      })
+    );
+  }
+
+  private resolveDriverNames(items: DireccioItem[]): Observable<DireccioItem[]> {
+    if (!items.length) return of(items);
+    return this.getPersonalMap().pipe(
+      map(personalMap => items.map(item => {
+        const name = personalMap.get(item.idXofer) ?? personalMap.get(item.idXofer.toLowerCase()) ?? '';
+        return {
+          ...item,
+          nomXofer: name || item.idXofer,
+        };
+      }))
+    );
+  }
+
+  updateXofer(recordId: string, idXofer: string, modId?: string): Observable<unknown> {
+    return this.fm.updateRecord('Ldir_Llista', recordId, { Id_Xofer: idXofer }, { modId });
   }
 }

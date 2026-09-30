@@ -1,18 +1,105 @@
-<ion-header><ion-toolbar class="fedir-brand-header"><ion-title>Puntos de Recogida</ion-title></ion-toolbar><ion-toolbar><ion-searchbar (ionInput)="onSearch($event)" placeholder="Buscar punto"></ion-searchbar></ion-toolbar></ion-header>
-<ion-content class="fedir-rutas-list">
-  <ng-container *ngIf="items$ | async as items">
-    <ion-list>
-      <ion-item *ngFor="let d of items">
-        <ion-label>
-          <h2>{{ d.nomDireccio }}</h2>
-          <p>{{ d.direccio }} — {{ d.poblacio }} ({{ d.provincia }})</p>
-          <p><small>{{ d.empresa }} {{ d.listContactes }}</small></p>
-        </ion-label>
-      </ion-item>
+<ion-header>
+  <ion-toolbar class="fedir-brand-header">
+    <ion-title>Puntos de Recogida</ion-title>
+  </ion-toolbar>
+  <ion-toolbar>
+    <ion-searchbar
+      (ionInput)="onSearch($event)"
+      placeholder="Buscar por nombre, dirección, población..."
+      debounce="300"
+      animated="true">
+    </ion-searchbar>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="fedir-direcciones-content">
+  @if (items$ | async; as items) {
+    <ion-list class="direcciones-list" lines="none">
+      @for (d of items; track d.recordId) {
+        <ion-item class="direccion-item">
+          <ion-label class="direccion-label">
+            <div class="direccion-header-row">
+              <h2 class="direccion-title">{{ d.nomDireccio || 'Sin nombre' }}</h2>
+            </div>
+
+            <p class="direccion-detail-line address-line">
+              @if (d.direccio || d.etiquetaDireccio) {
+                <ion-icon
+                  name="location-outline"
+                  class="detail-icon large"
+                  (click)="openInMaps(d)"
+                  role="button">
+                </ion-icon>
+                <span class="address-text" (click)="openInMaps(d)" role="button">
+                  <span>{{ formatAddress(d) }}</span>
+                </span>
+              }
+            </p>
+
+            @if (d.tel1) {
+              <div class="direccion-detail-line contact-line">
+                <div class="contact-buttons">
+                  <ion-button
+                    fill="clear"
+                    size="small"
+                    (click)="callPhone(d.tel1)"
+                    class="contact-btn">
+                    <ion-icon name="call-outline"></ion-icon>
+                  </ion-button>
+                  <ion-button
+                    fill="clear"
+                    size="small"
+                    (click)="openWhatsApp(d.tel1)"
+                    class="contact-btn">
+                    <ion-icon name="logo-whatsapp"></ion-icon>
+                  </ion-button>
+                  <span class="phone-text">{{ d.tel1 }}</span>
+                </div>
+              </div>
+            }
+
+            <div class="direccion-driver-row">
+              <div class="driver-indicator">
+                <ion-icon name="person-circle-outline" class="driver-icon"></ion-icon>
+                <span class="driver-heading">Conductor:</span>
+              </div>
+
+              @if (canEdit) {
+                <ion-select
+                  [value]="d.idXofer"
+                  (ionChange)="updateDriver(d, $event)"
+                  interface="popover"
+                  placeholder="— Sin asignar —"
+                  class="driver-select-pill">
+                  <ion-select-option value="">— Sin asignar —</ion-select-option>
+                  @for (dr of driversList; track dr.id) {
+                    <ion-select-option [value]="dr.id">{{ dr.name }}</ion-select-option>
+                  }
+                </ion-select>
+              } @else {
+                <span class="driver-readonly-badge">{{ d.nomXofer || '— Sin asignar —' }}</span>
+              }
+            </div>
+          </ion-label>
+        </ion-item>
+      }
     </ion-list>
-    <ion-infinite-scroll (ionInfinite)="onLoadMore($event)" [disabled]="!(hasMore$ | async)">
-      <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más..."></ion-infinite-scroll-content>
+
+    <ion-infinite-scroll (ionInfinite)="onLoadMore($event)" [disabled]="(hasMore$ | async) === false">
+      <ion-infinite-scroll-content loadingSpinner="bubbles" loadingText="Cargando más puntos..."></ion-infinite-scroll-content>
     </ion-infinite-scroll>
-    <ion-text *ngIf="!items.length && !(loading$ | async)" class="ion-padding"><p>Sin resultados.</p></ion-text>
-  </ng-container>
+
+    @if (items.length === 0 && (loading$ | async) === false) {
+      <div class="empty-state ion-padding ion-text-center">
+        <ion-icon name="map-outline" class="empty-icon"></ion-icon>
+        <p>No se encontraron puntos de recogida.</p>
+      </div>
+    }
+  }
+
+  @if (loading$ | async) {
+    <div class="loading-spinner-container ion-padding ion-text-center">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+    </div>
+  }
 </ion-content>

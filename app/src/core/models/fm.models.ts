@@ -143,6 +143,9 @@ export interface DireccioItem {
   provincia: string;
   empresa: string;
   listContactes: string;
+  tel1: string;
   etiquetaProv: string;
   etiquetaDireccio: string;
+  idXofer: string;
+  nomXofer: string;
 }

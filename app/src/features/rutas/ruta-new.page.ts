@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { RutaService } from '../../core/services/ruta.service';
@@ -11,16 +11,14 @@ import { WriteQueueService } from '../../core/services/write-queue.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RutaNewPage {
+  private fb = inject(FormBuilder);
+  private rutas = inject(RutaService);
+  private queue = inject(WriteQueueService);
+  private router = inject(Router);
+
   form = this.fb.group({ Data: ['', Validators.required], Id_Vehicle: ['', Validators.required] });
   saving = false;
   error: string | null = null;
-
-  constructor(
-    private fb: FormBuilder,
-    private rutas: RutaService,
-    private queue: WriteQueueService,
-    private router: Router,
-  ) {}
 
   save(): void {
     if (this.form.invalid) return;

@@ -1,7 +1,8 @@
-import { ChangeDetectorRef, Component, ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectorRef, Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable, BehaviorSubject, Subject, combineLatest, of, switchMap, tap, map, startWith, shareReplay, catchError, forkJoin } from 'rxjs';
-import { DireccioService, LrutaService, RutaService, resolvePersonalName } from '../../core/services/ruta.service';
+import { DireccioService, LrutaService, RutaService } from '../../core/services/ruta.service';
+import { PersonalService, type PersonalItem } from '../../core/services/personal.service';
 import { SessionService } from '../../core/services/session.service';
 import { FileMakerService } from '../../core/services/filemaker.service';
 import type { DireccioItem, RutaDetalle, RutaParadaPortal } from '../../core/models/fm.models';
@@ -14,6 +15,16 @@ import type { DireccioItem, RutaDetalle, RutaParadaPortal } from '../../core/mod
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RutaDetallePage {
+  private route = inject(ActivatedRoute);
+  router = inject(Router);
+  private rutas = inject(RutaService);
+  private lruta = inject(LrutaService);
+  private direcciones = inject(DireccioService);
+  private session = inject(SessionService);
+  private fm = inject(FileMakerService);
+  private personal = inject(PersonalService);
+  private changeDetector = inject(ChangeDetectorRef);
+
   ruta$: Observable<RutaDetalle | null>;
   ruta: RutaDetalle | null = null;
   loading$ = new BehaviorSubject<boolean>(true);
@@ -29,7 +40,7 @@ export class RutaDetallePage {
   private refresh$ = new Subject<void>();
 
   // Datos para desplegables del popover de info
-  personalList: { id: string; name: string }[] = [];
+  personalList: PersonalItem[] = [];
   vehiclesList: { id: string; matricula: string }[] = [];
 
   get canReorderPoints(): boolean {
@@ -67,16 +78,7 @@ export class RutaDetallePage {
     this.loadVehiclesList();
   }
 
-  constructor(
-    private route: ActivatedRoute,
-    public router: Router,
-    private rutas: RutaService,
-    private lruta: LrutaService,
-    private direcciones: DireccioService,
-    private session: SessionService,
-    private fm: FileMakerService,
-    private changeDetector: ChangeDetectorRef,
-  ) {
+  constructor() {
     this.ruta$ = combineLatest([this.route.paramMap, this.route.queryParamMap, this.refresh$.pipe(startWith(undefined))]).pipe(
       switchMap(([pm, qm]) => {
         this.loading$.next(true);
@@ -352,18 +354,9 @@ export class RutaDetallePage {
   }
 
   private loadPersonalList(): void {
-    this.fm.listODataRecords<Record<string, unknown>>(
-      'PERSONAL',
-      ['Id_Personal', 'Nom_Complert'],
-      { filter: 'Flag_Actiu eq 1 and Flag_Xofer eq 1', orderBy: 'Nom_Complert asc' },
-    ).subscribe({
-      next: records => {
-        this.personalList = records
-          .map(record => ({
-            id: String(record['Id_Personal'] ?? '').trim(),
-            name: String(record['Nom_Complert'] ?? '').trim(),
-          }))
-          .filter(person => person.id && person.name);
+    this.personal.getDrivers().subscribe({
+      next: drivers => {
+        this.personalList = drivers;
         this.keepCurrentPersonalOptions();
         this.syncPersonalSelection();
         this.changeDetector.detectChanges();

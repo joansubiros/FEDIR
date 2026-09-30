@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { BehaviorSubject, Observable, interval, Subscription } from 'rxjs';
 import { switchMap, catchError } from 'rxjs/operators';
 import { FileMakerService } from './filemaker.service';
@@ -14,10 +14,8 @@ export class WriteQueueSyncService {
   syncingChanges: Observable<boolean> = this.syncing$.asObservable();
   pendingChanges: Observable<number> = this.pending$.asObservable();
 
-  constructor(
-    private queue: WriteQueueService,
-    private fm: FileMakerService,
-  ) {}
+  private queue = inject(WriteQueueService);
+  private fm = inject(FileMakerService);
 
   start(intervalMs = 15000): void {
     this.stop();

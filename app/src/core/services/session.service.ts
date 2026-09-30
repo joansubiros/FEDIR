@@ -25,20 +25,31 @@ export class SessionService {
   }
 
   saveCredentials(username: string, password: string): void {
-    sessionStorage.setItem(this.credsKey, btoa(`${username}:${password}`));
+    sessionStorage.setItem(this.credsKey, JSON.stringify({ username, password }));
   }
 
   getCredentials(): { username: string; password: string } | null {
     const raw = sessionStorage.getItem(this.credsKey);
     if (!raw) return null;
     try {
-      const decoded = atob(raw);
-      const idx = decoded.indexOf(':');
-      if (idx < 0) return null;
-      return { username: decoded.slice(0, idx), password: decoded.slice(idx + 1) };
+      // Try to parse as JSON (new format)
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.username === 'string' && typeof parsed.password === 'string') {
+        return parsed;
+      }
     } catch {
-      return null;
+      // If JSON parsing fails, try the old base64 format
+      try {
+        const decoded = atob(raw);
+        const idx = decoded.indexOf(':');
+        if (idx >= 0) {
+          return { username: decoded.slice(0, idx), password: decoded.slice(idx + 1) };
+        }
+      } catch {
+        // ignore
+      }
     }
+    return null;
   }
 
   clear(): void {

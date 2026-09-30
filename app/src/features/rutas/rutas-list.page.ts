@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subject } from 'rxjs';
 import { finalize, scan, switchMap, tap } from 'rxjs/operators';
 import { RutaService } from '../../core/services/ruta.service';
@@ -11,6 +11,8 @@ import type { RutaListItem } from '../../core/models/fm.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RutasListPage {
+  private rutas = inject(RutaService);
+
   private page$ = new BehaviorSubject<number>(0);
   private limit = 50;
   items$: Observable<RutaListItem[]>;
@@ -21,7 +23,7 @@ export class RutasListPage {
   today = new Date();
   private todayKey = this.formatDateKey(this.today);
 
-  constructor(private rutas: RutaService) {
+  constructor() {
     this.items$ = this.page$.pipe(
       tap(() => this.loading$.next(true)),
       switchMap(page => this.rutas.list(this.limit, page * this.limit).pipe(finalize(() => this.loading$.next(false)))),

@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FileMakerService } from '../../core/services/filemaker.service';
@@ -10,19 +10,17 @@ import { FileMakerService } from '../../core/services/filemaker.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginPage {
+  private fb = inject(FormBuilder);
+  private fm = inject(FileMakerService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
   form = this.fb.group({
     username: ['', Validators.required],
     password: ['', Validators.required],
   });
   loading = false;
   error: string | null = null;
-
-  constructor(
-    private fb: FormBuilder,
-    private fm: FileMakerService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   submit(): void {
     if (this.form.invalid) return;

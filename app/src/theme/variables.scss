@@ -59,7 +59,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root body {
+  :root {
     --ion-background-color: #0b1220;
     --ion-background-color-rgb: 11, 18, 32;
     --ion-text-color: #eef2f7;
@@ -68,6 +68,7 @@
     --ion-toolbar-background: #1084bd;
     --ion-toolbar-color: #ffffff;
     --ion-item-background: #111d33;
+    --ion-card-background: #111d33;
     --ion-color-light: #1e2e45;
   }
 }

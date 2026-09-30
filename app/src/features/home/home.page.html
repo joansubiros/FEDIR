@@ -28,38 +28,48 @@
     </ion-button>
   </div>
 
-  <div class="fedir-pending-summary" *ngIf="pendientesTotales > 0" aria-label="Puntos pendientes">
-    <ion-icon name="alert-circle-outline"></ion-icon>
-    <span>Puntos pendientes</span>
-    <strong>{{ pendientesTotales }}</strong>
-  </div>
+  @if (pendientesTotales > 0) {
+    <div class="fedir-pending-summary" aria-label="Puntos pendientes">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <span>Puntos pendientes</span>
+      <strong>{{ pendientesTotales }}</strong>
+    </div>
+  }
 
   <div class="fedir-dash-section">
     <div class="fedir-dash-header">
       <span>Rutas recientes</span>
     </div>
 
-    <ion-spinner *ngIf="loading$ | async" class="ion-margin"></ion-spinner>
+    @if (loading$ | async) {
+      <ion-spinner class="ion-margin"></ion-spinner>
+    }
 
-    <ion-text *ngIf="error$ | async" color="danger" class="ion-padding">
-      <p>{{ error$ | async }}</p>
-    </ion-text>
+    @if (error$ | async; as error) {
+      <ion-text color="danger" class="ion-padding">
+        <p>{{ error }}</p>
+      </ion-text>
+    }
 
-    <ng-container *ngIf="recent$ | async as items">
+    @if (recent$ | async; as items) {
       <ion-list class="fedir-dash-list">
-        <ion-item *ngFor="let r of items" [class.fedir-route-today]="isToday(r.data)" [routerLink]="['/rutas', r.recordId]" [queryParams]="{ serial: r.idRutaSerial }" detail>
-          <ion-icon name="map-outline" slot="start" color="primary"></ion-icon>
-          <ion-label>
-            <h2><span class="fedir-route-number">Ruta {{ r.idRutaSerial }}</span> · <span class="fedir-route-date">{{ r.data | fedirDate }}</span></h2>
-            <p><span class="fedir-points-number">{{ r.countPunts }}</span> puntos · {{ r.matricula || '—' }}</p>
-          </ion-label>
-          <ion-badge slot="end" [color]="r.countPuntsPendents ? 'warning' : 'success'">
-            {{ r.countPuntsPendents ? r.countPuntsPendents + ' pend.' : 'OK' }}
-          </ion-badge>
-        </ion-item>
+        @for (r of items; track r.recordId) {
+          <ion-item [class.fedir-route-today]="isToday(r.data)" [routerLink]="['/rutas', r.recordId]" [queryParams]="{ serial: r.idRutaSerial }" detail>
+            <ion-icon name="map-outline" slot="start" color="primary"></ion-icon>
+            <ion-label>
+              <h2><span class="fedir-route-number">Ruta {{ r.idRutaSerial }}</span> · <span class="fedir-route-date">{{ r.data | fedirDate }}</span></h2>
+              <p><span class="fedir-points-number">{{ r.countPunts }}</span> puntos · {{ r.matricula || '—' }}</p>
+            </ion-label>
+            <ion-badge slot="end" [color]="r.countPuntsPendents ? 'warning' : 'success'">
+              {{ r.countPuntsPendents ? r.countPuntsPendents + ' pend.' : 'OK' }}
+            </ion-badge>
+          </ion-item>
+        }
       </ion-list>
-      <ion-text *ngIf="!items.length" class="ion-padding"><p>Sin rutas recientes.</p></ion-text>
-    </ng-container>
+      @if (items.length === 0) {
+        <ion-text class="ion-padding"><p>Sin rutas recientes.</p></ion-text>
+      }
+    }
   </div>
 </ion-content>
 

@@ -9,7 +9,8 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content *ngIf="parada$ | async as p" class="ion-padding fedir-with-footer fedir-point-content">
+@if (parada$ | async; as p) {
+<ion-content class="ion-padding fedir-with-footer fedir-point-content">
   <p class="fedir-point-address">{{ displayAddress$ | async }}</p>
 
   <ion-list class="fedir-point-form-list" lines="full">
@@ -29,7 +30,9 @@
         [(ngModel)]="quantContEntregats"
         placeholder="0">
         <ion-select-option [value]="0">0</ion-select-option>
-        <ion-select-option *ngFor="let n of tachosOptions" [value]="n">{{ n }}</ion-select-option>
+        @for (n of tachosOptions; track n) {
+          <ion-select-option [value]="n">{{ n }}</ion-select-option>
+        }
       </ion-select>
     </ion-item>
 
@@ -41,7 +44,9 @@
         [(ngModel)]="quantContRecollits"
         placeholder="0">
         <ion-select-option [value]="0">0</ion-select-option>
-        <ion-select-option *ngFor="let n of tachosOptions" [value]="n">{{ n }}</ion-select-option>
+        @for (n of tachosOptions; track n) {
+          <ion-select-option [value]="n">{{ n }}</ion-select-option>
+        }
       </ion-select>
     </ion-item>
 
@@ -53,7 +58,9 @@
         [(ngModel)]="quantContenidor"
         placeholder="0">
         <ion-select-option [value]="0">0</ion-select-option>
-        <ion-select-option *ngFor="let n of tachosOptions" [value]="n">{{ n }}</ion-select-option>
+        @for (n of tachosOptions; track n) {
+          <ion-select-option [value]="n">{{ n }}</ion-select-option>
+        }
       </ion-select>
     </ion-item>
 
@@ -104,36 +111,44 @@
     </div>
 
     <!-- Motivo Anul. (aparece si Punto Anulado está marcado) -->
-    <ion-item *ngIf="flagAnulat === '1'" class="fedir-motivo-item">
-      <ion-select
-        label="Motivo Anul."
-        interface="popover"
-        [(ngModel)]="motiuAnulat"
-        (ionChange)="onMotivoAnulatChange()">
-        <ion-select-option value="Tacho Robado">Tacho Robado</ion-select-option>
-        <ion-select-option value="Cliente Ausente">Cliente Ausente</ion-select-option>
-        <ion-select-option value="Sin Aceite">Sin Aceite</ion-select-option>
-        <ion-select-option value="Horario Incompatible">Horario Incompatible</ion-select-option>
-        <ion-select-option value="Falta De Tiempo">Falta De Tiempo</ion-select-option>
-      </ion-select>
-    </ion-item>
+    @if (flagAnulat === '1') {
+      <ion-item class="fedir-motivo-item">
+        <ion-select
+          label="Motivo Anul."
+          interface="popover"
+          [(ngModel)]="motiuAnulat"
+          (ionChange)="onMotivoAnulatChange()">
+          <ion-select-option value="Tacho Robado">Tacho Robado</ion-select-option>
+          <ion-select-option value="Cliente Ausente">Cliente Ausente</ion-select-option>
+          <ion-select-option value="Sin Aceite">Sin Aceite</ion-select-option>
+          <ion-select-option value="Horario Incompatible">Horario Incompatible</ion-select-option>
+          <ion-select-option value="Falta De Tiempo">Falta De Tiempo</ion-select-option>
+        </ion-select>
+      </ion-item>
+    }
 
     <!-- Botón Aviso NO Realizado (WhatsApp) -->
-    <div *ngIf="flagAnulat === '1'" class="fedir-aviso-container">
-      <ion-button
-        expand="block"
-        fill="solid"
-        class="fedir-btn-aviso-whatsapp"
-        (click)="sendAvisoNoRealizado()"
-        [disabled]="sendingAviso">
-        <ion-icon slot="start" name="logo-whatsapp"></ion-icon>
-        <ion-spinner *ngIf="sendingAviso" slot="start" name="crescent"></ion-spinner>
-        Aviso NO Realizado
-      </ion-button>
-      <ion-text *ngIf="avisoStatus" [color]="avisoSuccess ? 'success' : 'danger'">
-        <p class="fedir-aviso-status">{{ avisoStatus }}</p>
-      </ion-text>
-    </div>
+    @if (flagAnulat === '1') {
+      <div class="fedir-aviso-container">
+        <ion-button
+          expand="block"
+          fill="solid"
+          class="fedir-btn-aviso-whatsapp"
+          (click)="sendAvisoNoRealizado()"
+          [disabled]="sendingAviso">
+          <ion-icon slot="start" name="logo-whatsapp"></ion-icon>
+          @if (sendingAviso) {
+            <ion-spinner slot="start" name="crescent"></ion-spinner>
+          }
+          Aviso NO Realizado
+        </ion-button>
+        @if (avisoStatus) {
+          <ion-text [color]="avisoSuccess ? 'success' : 'danger'">
+            <p class="fedir-aviso-status">{{ avisoStatus }}</p>
+          </ion-text>
+        }
+      </div>
+    }
 
     <!-- WhatsApp -->
     <ion-item>
@@ -175,3 +190,4 @@
     GUARDAR
   </ion-button>
 </ion-content>
+}

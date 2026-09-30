@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { catchError, finalize, map } from 'rxjs/operators';
@@ -15,6 +15,12 @@ import type { RutaListItem } from '../../core/models/fm.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomePage implements OnInit {
+  private router = inject(Router);
+  private rutas = inject(RutaService);
+  private fm = inject(FileMakerService);
+  private session = inject(SessionService);
+  private cdr = inject(ChangeDetectorRef);
+
   private readonly proveedorUrl = 'https://n8n.fmsuit.net/webhook/proveedor';
   private readonly proveedorRoute = '/proveedores/nuevo';
   today = new Date();
@@ -25,14 +31,6 @@ export class HomePage implements OnInit {
   pendientesTotales = 0;
 
   private todayKey = this.formatDateKey(this.today);
-
-  constructor(
-    private router: Router,
-    private rutas: RutaService,
-    private fm: FileMakerService,
-    private session: SessionService,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   ngOnInit(): void {
     this.loading$.next(true);

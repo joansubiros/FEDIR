@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, tap, switchMap, catchError, timeout } from 'rxjs/operators';
@@ -8,6 +8,9 @@ import type { FmLoginResponse, FmFindResponse, FmSingleResponse, FmCreateRespons
 
 @Injectable({ providedIn: 'root' })
 export class FileMakerService {
+  private http = inject(HttpClient);
+  private session = inject(SessionService);
+
   private get baseUrl(): string {
     // En dev el proxy de Angular (proxy.conf.json) intercepta /fmi/ y lo
     // reenvía a fmsuit.cat (evita CORS desde http://127.0.0.1:8100).
@@ -18,11 +21,6 @@ export class FileMakerService {
     }
     return `/fmi/data/${environment.fmVersion}/databases/${environment.fmDatabase}`;
   }
-
-  constructor(
-    private http: HttpClient,
-    private session: SessionService,
-  ) {}
 
   login(username: string, password: string): Observable<string> {
     const url = `${this.baseUrl}/sessions`;

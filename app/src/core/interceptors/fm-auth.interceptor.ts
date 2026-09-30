@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, BehaviorSubject } from 'rxjs';
 import { catchError, filter, take, switchMap } from 'rxjs/operators';
@@ -7,13 +7,11 @@ import { FileMakerService } from '../services/filemaker.service';
 
 @Injectable()
 export class FmAuthInterceptor implements HttpInterceptor {
+  private session = inject(SessionService);
+  private fm = inject(FileMakerService);
+
   private isRefreshing = false;
   private refreshSubject = new BehaviorSubject<string | null>(null);
-
-  constructor(
-    private session: SessionService,
-    private fm: FileMakerService,
-  ) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     if (!this.isFmRequest(req)) return next.handle(req);

@@ -3,12 +3,13 @@
     <ion-title>
       <div class="fedir-route-header-title">
         <span>RUTA {{ (ruta$ | async)?.fieldData?.Id_Ruta_serial || routeSerialParam || '...' }}</span>
-        <ion-badge
-          *ngIf="(ruta$ | async)?.fieldData?.Estat as estat"
-          class="fedir-route-status-badge"
-          [attr.data-status]="estat.toLowerCase()">
-          {{ estat }}
-        </ion-badge>
+        @if ((ruta$ | async)?.fieldData?.Estat; as estat) {
+          <ion-badge
+            class="fedir-route-status-badge"
+            [attr.data-status]="estat.toLowerCase()">
+            {{ estat }}
+          </ion-badge>
+        }
       </div>
     </ion-title>
     <ion-buttons slot="end">
@@ -19,58 +20,93 @@
 </ion-header>
 
 <ion-content class="fedir-route-content">
-  <ng-container *ngIf="ruta as r; else routeState">
+  @if (ruta; as r) {
   <section class="fedir-route-summary">
     <strong>{{ r.fieldData.Data | fedirDate }}</strong>
-    <span *ngIf="r.fieldData.Temps_Privisio_txt">{{ r.fieldData.Temps_Privisio_txt }}</span>
-    <span *ngIf="r.fieldData.Km_Privisio">{{ r.fieldData.Km_Privisio | number:'1.1-1' }} km</span>
-    <span class="fedir-summary-vehicle" *ngIf="r.fieldData.Matricula_Vehicle">{{ r.fieldData.Matricula_Vehicle }}</span>
-    <span class="fedir-summary-drivers" *ngIf="r.fieldData.Nom_Personal_1 || r.fieldData.Nom_Personal_2 || r.fieldData.Nom_Personal_3">
-      <span *ngIf="r.fieldData.Nom_Personal_1">{{ r.fieldData.Nom_Personal_1 }}</span>
-      <span *ngIf="r.fieldData.Nom_Personal_2"> · {{ r.fieldData.Nom_Personal_2 }}</span>
-      <span *ngIf="r.fieldData.Nom_Personal_3"> · {{ r.fieldData.Nom_Personal_3 }}</span>
-    </span>
+    @if (r.fieldData.Temps_Privisio_txt) {
+      <span>{{ r.fieldData.Temps_Privisio_txt }}</span>
+    }
+    @if (r.fieldData.Km_Privisio) {
+      <span>{{ r.fieldData.Km_Privisio | number:'1.1-1' }} km</span>
+    }
+    @if (r.fieldData.Matricula_Vehicle) {
+      <span class="fedir-summary-vehicle">{{ r.fieldData.Matricula_Vehicle }}</span>
+    }
+    @if (r.fieldData.Nom_Personal_1 || r.fieldData.Nom_Personal_2 || r.fieldData.Nom_Personal_3) {
+      <span class="fedir-summary-drivers">
+        @if (r.fieldData.Nom_Personal_1) {
+          <span>{{ r.fieldData.Nom_Personal_1 }}</span>
+        }
+        @if (r.fieldData.Nom_Personal_2) {
+          <span> · {{ r.fieldData.Nom_Personal_2 }}</span>
+        }
+        @if (r.fieldData.Nom_Personal_3) {
+          <span> · {{ r.fieldData.Nom_Personal_3 }}</span>
+        }
+      </span>
+    }
   </section>
 
   <section class="fedir-route-actions">
-    <ion-button *ngIf="canAddPoint(r)" fill="outline" (click)="openAddPoint(r)"><ion-icon slot="start" name="add-outline"></ion-icon>Punto</ion-button>
-    <ng-container *ngIf="nextPending(r.portalParadas) as next">
+    @if (canAddPoint(r)) {
+      <ion-button fill="outline" (click)="openAddPoint(r)"><ion-icon slot="start" name="add-outline"></ion-icon>Punto</ion-button>
+    }
+    @if (nextPending(r.portalParadas); as next) {
       <ion-button fill="outline" (click)="openNavigation(next, 'waze')"><ion-icon slot="start" name="navigate-outline"></ion-icon>Waze</ion-button>
       <ion-button fill="outline" (click)="openNavigation(next, 'maps')"><ion-icon slot="start" name="map-outline"></ion-icon>Maps</ion-button>
-    </ng-container>
+    }
   </section>
 
-  <ion-text *ngIf="error" color="danger"><p class="fedir-route-error">{{ error }}</p></ion-text>
+  @if (error) {
+    <ion-text color="danger"><p class="fedir-route-error">{{ error }}</p></ion-text>
+  }
   <ion-list class="fedir-route-list">
     <ion-list-header class="fedir-points-header">
       <div class="fedir-points-header-inner">
         <span>Puntos ({{ r.portalParadas.length }})</span>
-        <ion-badge *ngIf="countPending(r.portalParadas) > 0" class="fedir-pending-badge">
-          {{ countPending(r.portalParadas) }} pend.
-        </ion-badge>
+        @if (countPending(r.portalParadas) > 0) {
+          <ion-badge class="fedir-pending-badge">
+            {{ countPending(r.portalParadas) }} pend.
+          </ion-badge>
+        }
       </div>
     </ion-list-header>
-    <ion-item *ngFor="let p of r.portalParadas; let i = index" class="fedir-route-point" [class.fedir-point-done]="p.flagFet === '1' && p.flagAnulat !== '1'" [class.fedir-point-cancelled]="p.flagAnulat === '1'">
-      <div class="fedir-point-order" slot="start">{{ i + 1 }}</div>
-      <ion-label class="fedir-point-label">
-        <h2>{{ hasClient(p) ? ((p.idClientPrint || p.idClient || 'Cliente') + ' · ' + (p.nomEmpresa || 'Cliente sin nombre')) : (p.nomDireccio || p.etiquetaDireccio || 'Punto sin nombre') }}</h2>
-        <p *ngIf="hasClient(p) && p.direccio">{{ p.direccio }}</p>
-        <p *ngIf="p.hDesde && p.hFins">{{ p.hDesde }} – {{ p.hFins }}<span *ngIf="p.tel1"> · {{ p.tel1 }}</span></p>
-        <p *ngIf="(!p.hDesde || !p.hFins) && p.tel1">{{ p.tel1 }}</p>
-      </ion-label>
-      <div class="fedir-point-tools" slot="end">
-        <ion-button *ngIf="hasClient(p)" fill="clear" (click)="openPesaje($event)" aria-label="Crear pesaje"><ion-icon name="scale-outline"></ion-icon></ion-button>
-        <ng-container *ngIf="!hasClient(p)">
-          <ng-container *ngIf="canReorderPoints && p.flagFet !== '1' && p.flagAnulat !== '1'">
-            <ion-button *ngIf="i > 0" fill="clear" [disabled]="savingOrder" (click)="handleMove($event, r.portalParadas, i, -1)" aria-label="Subir punto"><ion-icon name="arrow-up-outline"></ion-icon></ion-button>
-            <ion-button *ngIf="i < r.portalParadas.length - 1" fill="clear" [disabled]="savingOrder" (click)="handleMove($event, r.portalParadas, i, 1)" aria-label="Bajar punto"><ion-icon name="arrow-down-outline"></ion-icon></ion-button>
-          </ng-container>
-          <ion-button fill="clear" (click)="openPoint($event, p.recordId, r)" aria-label="Editar punto"><ion-icon name="create-outline"></ion-icon></ion-button>
-        </ng-container>
-      </div>
-    </ion-item>
+    @for (p of r.portalParadas; track p.recordId; let i = $index) {
+      <ion-item class="fedir-route-point" [class.fedir-point-done]="p.flagFet === '1' && p.flagAnulat !== '1'" [class.fedir-point-cancelled]="p.flagAnulat === '1'">
+        <div class="fedir-point-order" slot="start">{{ i + 1 }}</div>
+        <ion-label class="fedir-point-label">
+          <h2>{{ hasClient(p) ? ((p.idClientPrint || p.idClient || 'Cliente') + ' · ' + (p.nomEmpresa || 'Cliente sin nombre')) : (p.nomDireccio || p.etiquetaDireccio || 'Punto sin nombre') }}</h2>
+          @if (hasClient(p) && p.direccio) {
+            <p>{{ p.direccio }}</p>
+          }
+          @if (p.hDesde && p.hFins) {
+            <p>{{ p.hDesde }} – {{ p.hFins }} @if (p.tel1) {<span> · {{ p.tel1 }}</span>}</p>
+          }
+          @if ((!p.hDesde || !p.hFins) && p.tel1) {
+            <p>{{ p.tel1 }}</p>
+          }
+        </ion-label>
+        <div class="fedir-point-tools" slot="end">
+          @if (hasClient(p)) {
+            <ion-button fill="clear" (click)="openPesaje($event)" aria-label="Crear pesaje"><ion-icon name="scale-outline"></ion-icon></ion-button>
+          } @else {
+            @if (canReorderPoints && p.flagFet !== '1' && p.flagAnulat !== '1') {
+              @if (i > 0) {
+                <ion-button fill="clear" [disabled]="savingOrder" (click)="handleMove($event, r.portalParadas, i, -1)" aria-label="Subir punto"><ion-icon name="arrow-up-outline"></ion-icon></ion-button>
+              }
+              @if (i < r.portalParadas.length - 1) {
+                <ion-button fill="clear" [disabled]="savingOrder" (click)="handleMove($event, r.portalParadas, i, 1)" aria-label="Bajar punto"><ion-icon name="arrow-down-outline"></ion-icon></ion-button>
+              }
+            }
+            <ion-button fill="clear" (click)="openPoint($event, p.recordId, r)" aria-label="Editar punto"><ion-icon name="create-outline"></ion-icon></ion-button>
+          }
+        </div>
+      </ion-item>
+    }
   </ion-list>
-  <ion-spinner *ngIf="loading$ | async"></ion-spinner>
+  @if (loading$ | async) {
+    <ion-spinner></ion-spinner>
+  }
 
   <!-- INFO POPOVER -->
   <ion-popover [isOpen]="showInfo" (didDismiss)="showInfo = false" [showBackdrop]="true" class="fedir-info-popover">
@@ -83,13 +119,15 @@
           </button>
         </div>
         <div class="fedir-fm-popover-body">
-          <div class="fedir-fm-row" *ngIf="ruta.fieldData.Estat">
-            <span class="fedir-fm-label">Estado</span>
-            <div class="fedir-fm-field">
-              <span class="fedir-fm-status-text">{{ ruta.fieldData.Estat }}</span>
-              <ion-icon name="flag-outline" class="fedir-fm-field-icon"></ion-icon>
+          @if (ruta.fieldData.Estat) {
+            <div class="fedir-fm-row">
+              <span class="fedir-fm-label">Estado</span>
+              <div class="fedir-fm-field">
+                <span class="fedir-fm-status-text">{{ ruta.fieldData.Estat }}</span>
+                <ion-icon name="flag-outline" class="fedir-fm-field-icon"></ion-icon>
+              </div>
             </div>
-          </div>
+          }
           <div class="fedir-fm-row">
             <span class="fedir-fm-label">Fecha</span>
             <div class="fedir-fm-field">
@@ -103,7 +141,9 @@
               @if (canEditRouteInfo(ruta)) {
                 <ion-select [(ngModel)]="ruta.fieldData.Id_Vehicle" class="fedir-fm-select" interface="popover" placeholder="Seleccionar vehículo">
                   <ion-select-option value="">—</ion-select-option>
-                  <ion-select-option *ngFor="let v of vehiclesList" [value]="v.id">{{ v.matricula }}</ion-select-option>
+                  @for (v of vehiclesList; track v.id) {
+                    <ion-select-option [value]="v.id">{{ v.matricula }}</ion-select-option>
+                  }
                 </ion-select>
               } @else {
                 <span>{{ ruta.fieldData.Matricula_Vehicle }} ({{ ruta.fieldData.Id_Vehicle }})</span>
@@ -117,7 +157,9 @@
               @if (canEditRouteInfo(ruta)) {
                 <ion-select [(ngModel)]="ruta.fieldData.Id_Personal_1" class="fedir-fm-select" interface="popover" placeholder="Seleccionar personal">
                   <ion-select-option value="">—</ion-select-option>
-                  <ion-select-option *ngFor="let p of personalList" [value]="p.id">{{ p.name }}</ion-select-option>
+                  @for (p of personalList; track p.id) {
+                    <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option>
+                  }
                 </ion-select>
               } @else {
                 <span>{{ ruta.fieldData.Nom_Personal_1 }} ({{ ruta.fieldData.Id_Personal_1 }})</span>
@@ -131,7 +173,9 @@
               @if (canEditRouteInfo(ruta)) {
                 <ion-select [(ngModel)]="ruta.fieldData.Id_Personal_2" class="fedir-fm-select" interface="popover" placeholder="Seleccionar personal">
                   <ion-select-option value="">—</ion-select-option>
-                  <ion-select-option *ngFor="let p of personalList" [value]="p.id">{{ p.name }}</ion-select-option>
+                  @for (p of personalList; track p.id) {
+                    <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option>
+                  }
                 </ion-select>
               } @else {
                 <span>{{ ruta.fieldData.Nom_Personal_2 }} ({{ ruta.fieldData.Id_Personal_2 }})</span>
@@ -145,7 +189,9 @@
               @if (canEditRouteInfo(ruta)) {
                 <ion-select [(ngModel)]="ruta.fieldData.Id_Personal_3" class="fedir-fm-select" interface="popover" placeholder="Seleccionar personal">
                   <ion-select-option value="">—</ion-select-option>
-                  <ion-select-option *ngFor="let p of personalList" [value]="p.id">{{ p.name }}</ion-select-option>
+                  @for (p of personalList; track p.id) {
+                    <ion-select-option [value]="p.id">{{ p.name }}</ion-select-option>
+                  }
                 </ion-select>
               } @else {
                 <span>{{ ruta.fieldData.Nom_Personal_3 }} ({{ ruta.fieldData.Id_Personal_3 }})</span>
@@ -161,36 +207,42 @@
             </ion-button>
           }
 
-          <button *ngIf="canOptimizeRoute(ruta)" type="button" class="fedir-fm-btn-optimize" (click)="optimizarRutaFM(ruta)" [disabled]="savingInfo">
-            @if (savingInfo) { <ion-spinner slot="start" name="crescent"></ion-spinner> }
-            <ion-icon name="map-outline"></ion-icon>
-            <span>Optimizar Ruta</span>
-          </button>
+          @if (canOptimizeRoute(ruta)) {
+            <button type="button" class="fedir-fm-btn-optimize" (click)="optimizarRutaFM(ruta)" [disabled]="savingInfo">
+              @if (savingInfo) { <ion-spinner slot="start" name="crescent"></ion-spinner> }
+              <ion-icon name="map-outline"></ion-icon>
+              <span>Optimizar Ruta</span>
+            </button>
+          }
         </div>
       </div>
     </ng-template>
   </ion-popover>
 
-  <div class="fedir-route-modal" *ngIf="showAddPoint">
-    <div class="fedir-route-modal-panel fedir-add-point-panel">
-      <ion-button fill="clear" class="fedir-modal-close" (click)="showAddPoint = false" aria-label="Cerrar búsqueda"><ion-icon name="close-outline"></ion-icon></ion-button>
-      <h2>Añadir punto</h2>
-      <ion-searchbar placeholder="Buscar punto de recogida" [value]="addressQuery" (ionInput)="searchPoints($event)"></ion-searchbar>
-      <ion-list>
-        <ion-item *ngFor="let point of addressResults$ | async" button (click)="addPoint(point, r)">
-          <ion-label><h3>{{ point.nomDireccio }}</h3><p>{{ point.direccio }} · {{ point.poblacio }}</p></ion-label>
-        </ion-item>
-      </ion-list>
+  @if (showAddPoint) {
+    <div class="fedir-route-modal">
+      <div class="fedir-route-modal-panel fedir-add-point-panel">
+        <ion-button fill="clear" class="fedir-modal-close" (click)="showAddPoint = false" aria-label="Cerrar búsqueda"><ion-icon name="close-outline"></ion-icon></ion-button>
+        <h2>Añadir punto</h2>
+        <ion-searchbar placeholder="Buscar punto de recogida" [value]="addressQuery" (ionInput)="searchPoints($event)"></ion-searchbar>
+        <ion-list>
+          @for (point of addressResults$ | async; track point.recordId) {
+            <ion-item button (click)="addPoint(point, r)">
+              <ion-label><h3>{{ point.nomDireccio }}</h3><p>{{ point.direccio }} · {{ point.poblacio }}</p></ion-label>
+            </ion-item>
+          }
+        </ion-list>
+      </div>
     </div>
-  </div>
-  </ng-container>
-  <ng-template #routeState>
-    <div class="fedir-route-state" *ngIf="loading$ | async; else routeError">
-      <ion-spinner></ion-spinner>
-      <p>Cargando ruta {{ routeSerialParam || '' }}...</p>
-    </div>
-  </ng-template>
-  <ng-template #routeError>
-    <ion-text color="danger"><p class="fedir-route-error">{{ error || 'No se pudo cargar la ruta' }}</p></ion-text>
-  </ng-template>
+  }
+  } @else {
+    @if (loading$ | async) {
+      <div class="fedir-route-state">
+        <ion-spinner></ion-spinner>
+        <p>Cargando ruta {{ routeSerialParam || '' }}...</p>
+      </div>
+    } @else {
+      <ion-text color="danger"><p class="fedir-route-error">{{ error || 'No se pudo cargar la ruta' }}</p></ion-text>
+    }
+  }
 </ion-content>

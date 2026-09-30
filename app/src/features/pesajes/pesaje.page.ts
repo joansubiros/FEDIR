@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FileMakerService } from '../../core/services/filemaker.service';
@@ -12,6 +12,12 @@ import { WriteQueueService } from '../../core/services/write-queue.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PesajePage {
+  private fb = inject(FormBuilder);
+  private fm = inject(FileMakerService);
+  private queue = inject(WriteQueueService);
+  private router = inject(Router);
+  private cdr = inject(ChangeDetectorRef);
+
   readonly lugaresList = [
     'SODIR SRL',
     'Cereales Caviglia',
@@ -43,14 +49,6 @@ export class PesajePage {
 
   saving = false;
   error: string | null = null;
-
-  constructor(
-    private fb: FormBuilder,
-    private fm: FileMakerService,
-    private queue: WriteQueueService,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-  ) {}
 
   volver(): void {
     void this.router.navigate(['/home']);

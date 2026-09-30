@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, ChangeDetectionStrategy, ChangeDetectorRef, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, combineLatest, switchMap, tap, map, shareReplay } from 'rxjs';
@@ -14,6 +14,14 @@ import type { LrutaDetalle } from '../../core/models/fm.models';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ParadaDetallePage {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private http = inject(HttpClient);
+  private lruta = inject(LrutaService);
+  private rutas = inject(RutaService);
+  private queue = inject(WriteQueueService);
+  private cdr = inject(ChangeDetectorRef);
+
   parada$: Observable<LrutaDetalle>;
   saving = false;
   sendingAviso = false;
@@ -42,15 +50,7 @@ export class ParadaDetallePage {
   pageTitle$ = new BehaviorSubject<string>('');
   displayAddress$ = new BehaviorSubject<string>('');
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private http: HttpClient,
-    private lruta: LrutaService,
-    private rutas: RutaService,
-    private queue: WriteQueueService,
-    private cdr: ChangeDetectorRef,
-  ) {
+  constructor() {
     this.parada$ = combineLatest([
       this.route.paramMap,
       this.route.queryParamMap,
