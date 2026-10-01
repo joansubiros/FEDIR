@@ -29,8 +29,7 @@ export class DireccionesPage implements OnInit, OnDestroy {
   driversList: { id: string; name: string }[] = [];
 
   get canEdit(): boolean {
-    const username = this.session.getCredentials()?.username?.toLowerCase();
-    return username === 'fbelloga' || username === 'fbellota' || username === 'grodriguez' || username === 'jsubiros';
+    return this.dir.isAllAccessUser();
   }
 
   constructor() {

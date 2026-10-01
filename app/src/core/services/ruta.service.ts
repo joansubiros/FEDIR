@@ -344,7 +344,18 @@ export class DireccioService {
   private personal = inject(PersonalService);
   private session = inject(SessionService);
 
-  private readonly devUsers = ['fbellota', 'grodriguez', 'jsubiros'];
+  private readonly allAccessUsers = ['fbellota', 'grodriguez', 'jsubiros'];
+
+  // IDs conocidos de PERSONAL (tabla PERSONAL) como respaldo inmediato
+  private readonly fallbackPersonalIds: Record<string, string> = {
+    fbellota: 'C5FB60B7-25CE-9040-9789-92F7CA3733ED',
+    grodriguez: '35BD3E35-2FAE-E94F-AD97-5008AF6F099B',
+    mbarbitta: '80C8DDA9-BD67-9745-AD7E-504FED2C9902',
+    mbarbita: '80C8DDA9-BD67-9745-AD7E-504FED2C9902',
+    scoronel: 'C8492DB0-FD3A-EA40-BB5E-2DA3548A1B97',
+    bdimauro: '6C0A90C8-F694-274E-8625-754C40B70B5B',
+    tgarmendia: 'B4B70BA2-89DA-C942-9E88-414AAEA922F0',
+  };
 
   getPersonalMap(): Observable<Map<string, string>> {
     return this.personal.getPersonalMap();
@@ -354,31 +365,43 @@ export class DireccioService {
     return this.personal.getDrivers();
   }
 
-  private getCurrentUsername(): string | null {
+  getCurrentUsername(): string | null {
     const creds = this.session.getCredentials();
-    if (!creds) return null;
-    return creds.username.toLowerCase();
+    if (!creds?.username) return null;
+    return creds.username.toLowerCase().trim();
   }
 
-  private isDeveloper(): boolean {
-    const username = this.getCurrentUsername();
-    return username !== null && this.devUsers.includes(username);
+  isAllAccessUser(username?: string | null): boolean {
+    const u = (username ?? this.getCurrentUsername())?.toLowerCase().trim();
+    return u != null && this.allAccessUsers.includes(u);
   }
 
-  private getCurrentUserId(): Observable<string | null> {
+  getUserAccessInfo(): Observable<{ isAllAccess: boolean; idPersonal: string | null }> {
     const username = this.getCurrentUsername();
-    if (username === null) return of(null);
-    if (this.devUsers.includes(username)) return of(null); // developers see all
+    if (!username) {
+      return of({ isAllAccess: false, idPersonal: null });
+    }
+
+    if (this.allAccessUsers.includes(username)) {
+      return of({ isAllAccess: true, idPersonal: null });
+    }
+
+    // Para el resto de usuarios: buscar su Id_Personal en PERSONAL vía OData
     return this.fm.listODataRecords<Record<string, unknown>>(
       'PERSONAL',
       ['Id_Personal', 'Usuari_Nom'],
       { filter: `Usuari_Nom eq '${username}'` }
     ).pipe(
       map(records => {
-        const record = records.find(r => String(r['Usuari_Nom']).toLowerCase() === username);
-        return record ? String(record['Id_Personal'] || '') : '';
+        const record = records.find(r => String(r['Usuari_Nom']).toLowerCase().trim() === username);
+        const id = record ? String(record['Id_Personal'] || '').trim() : '';
+        return id || this.fallbackPersonalIds[username] || null;
       }),
-      switchMap(id => (id ? of(id) : of(null)))
+      catchError(err => {
+        console.warn(`[direcciones] Error consultando OData PERSONAL para ${username}:`, err);
+        return of(this.fallbackPersonalIds[username] || null);
+      }),
+      map(idPersonal => ({ isAllAccess: false, idPersonal }))
     );
   }
 
@@ -436,51 +459,70 @@ export class DireccioService {
       poblacio: getFieldStr(r.fieldData, ['Poblacio']),
       barri: getFieldStr(r.fieldData, ['Barri']),
       provincia: getFieldStr(r.fieldData, ['Provincia']),
-      empresa: getFieldStr(r.fieldData, ['Empresa']),
-      listContactes: getFieldStr(r.fieldData, ['List_Contactes']),
-      tel1: getFieldStr(r.fieldData, ['Tel_1']),
-      etiquetaProv: getFieldStr(r.fieldData, ['Etiqueta_Prov']),
+      empresa: getFieldStr(r.fieldData, ['ldir_PROVEIDORS::Empresa', 'Empresa']),
+      listContactes: getFieldStr(r.fieldData, ['ldir_PROVEIDORS::List_Contactes', 'List_Contactes']),
+      tel1: getFieldStr(r.fieldData, ['ldir_LCONTACTES::Tel_1', 'Tel_1']),
+      etiquetaProv: getFieldStr(r.fieldData, ['ldir_PROVEIDORS::Etiqueta_Prov', 'Etiqueta_Prov']),
       etiquetaDireccio: getFieldStr(r.fieldData, ['Etiqueta_Direccio']),
       idXofer: getFieldStr(r.fieldData, ['Id_Xofer']),
-      nomXofer: getFieldStr(r.fieldData, ['Nom_Compllet']),
+      nomXofer: getFieldStr(r.fieldData, ['ldir_PERSONAL::Nom_Complert', 'Nom_Compllet']),
     };
   }
 
   private buildIndex(): Observable<DireccioItem[]> {
-    return this.getCurrentUserId().pipe(
-      switchMap(userId => {
-        const base$ = userId
-          ? this.fetchAll(offset => this.fm.findRecords('Ldir_Llista', [{ Id_Xofer: userId }], { limit: 500, offset }))
-          : this.fetchAll(offset => this.fm.listRecords('Ldir_Llista', { limit: 500, offset }));
-        // Datos de dirección (Direccio, Poblacio, Barri...) del layout Phone_Ldir_Llista; el mismo recordId (tabla LDIRECCIONS)
+    return this.getUserAccessInfo().pipe(
+      switchMap(access => {
+        if (!access.isAllAccess && !access.idPersonal) {
+          // Usuario no autorizado o sin Id_Personal -> lista vacía
+          return of([] as DireccioItem[]);
+        }
+
+        if (!access.isAllAccess) {
+          // Conductor normal: descargar solo las direcciones que le corresponden
+          return this.fetchAll(offset =>
+            this.fm.findRecords('Ldir_Llista', [{ Id_Xofer: access.idPersonal! }], { limit: 500, offset })
+          ).pipe(
+            switchMap(base => {
+              const items = base
+                .map(r => this.mapRecord(r))
+                .filter(d => !d.idXofer || d.idXofer.toLowerCase() === access.idPersonal!.toLowerCase());
+              return this.enrichWithAddressItems(items);
+            })
+          );
+        }
+
+        // Acceso total (fbellota, grodriguez, jsubiros): descargar todas
+        const base$ = this.fetchAll(offset => this.fm.listRecords('Ldir_Llista', { limit: 500, offset }));
         const addr$ = this.fetchAll(offset => this.fm.listRecords('Phone_Ldir_Llista', { limit: 500, offset })).pipe(
           catchError(err => {
             console.warn('[direcciones] no se pudo cargar Phone_Ldir_Llista', err);
             return of([] as FmRecord[]);
           }),
         );
-        return forkJoin([base$, addr$]);
-      }),
-      map(([base, addr]) => {
-        const addrById = new Map<string, FmRecord>(addr.map(r => [r.recordId, r]));
-        return base.map(r => {
-          const item = this.mapRecord(r);
-          const a = addrById.get(r.recordId);
-          if (!a) return item;
-          const ai = this.mapRecord(a);
-          return {
-            ...item,
-            direccio: (ai.direccio && ai.direccio !== item.nomDireccio) ? ai.direccio : item.direccio,
-            poblacio: ai.poblacio || item.poblacio,
-            barri: ai.barri || item.barri,
-            provincia: ai.provincia || item.provincia,
-            empresa: ai.empresa || item.empresa,
-            listContactes: ai.listContactes || item.listContactes,
-            etiquetaProv: ai.etiquetaProv || item.etiquetaProv,
-            etiquetaDireccio: ai.etiquetaDireccio || item.etiquetaDireccio,
-          };
-        });
-      }),
+
+        return forkJoin([base$, addr$]).pipe(
+          map(([base, addr]) => {
+            const addrById = new Map<string, FmRecord>(addr.map(r => [r.recordId, r]));
+            return base.map(r => {
+              const item = this.mapRecord(r);
+              const a = addrById.get(r.recordId);
+              if (!a) return item;
+              const ai = this.mapRecord(a);
+              return {
+                ...item,
+                direccio: (ai.direccio && ai.direccio !== item.nomDireccio) ? ai.direccio : item.direccio,
+                poblacio: ai.poblacio || item.poblacio,
+                barri: ai.barri || item.barri,
+                provincia: ai.provincia || item.provincia,
+                empresa: ai.empresa || item.empresa,
+                listContactes: ai.listContactes || item.listContactes,
+                etiquetaProv: ai.etiquetaProv || item.etiquetaProv,
+                etiquetaDireccio: ai.etiquetaDireccio || item.etiquetaDireccio,
+              };
+            });
+          })
+        );
+      })
     );
   }
 
@@ -505,57 +547,45 @@ export class DireccioService {
   }
 
   list(limit = 50, offset = 0): Observable<{ items: DireccioItem[]; total: number }> {
-    return this.getCurrentUserId().pipe(
-      switchMap(userId => {
-        if (userId) {
-          // Non-developer: use find with Id_Xofer filter
-          return this.fm.findRecords('Ldir_Llista', [{ Id_Xofer: userId }], { limit, offset }).pipe(
+    return this.getUserAccessInfo().pipe(
+      switchMap(access => {
+        if (!access.isAllAccess && !access.idPersonal) {
+          return of({ items: [], total: 0 });
+        }
+
+        if (!access.isAllAccess) {
+          // Conductor normal: buscar sólo sus direcciones por Id_Xofer
+          return this.fm.findRecords('Ldir_Llista', [{ Id_Xofer: access.idPersonal! }], { limit, offset }).pipe(
+            catchError(err => {
+              const code = err?.error?.messages?.[0]?.code;
+              if (code === '401') {
+                return of({
+                  response: {
+                    dataInfo: { totalRecordCount: 0, foundCount: 0, returnedCount: 0, database: '', layout: '', table: '' },
+                    data: []
+                  },
+                  messages: []
+                } as FmFindResponse);
+              }
+              return throwError(() => err);
+            }),
             switchMap(res => {
-              const items: DireccioItem[] = res.response.data.map(r => ({
-                recordId: r.recordId,
-                modId: r.modId,
-                idDireccio: getFieldStr(r.fieldData, ['Id_Direccio_serial', 'Id_Direccio']),
-                nomDireccio: getFieldStr(r.fieldData, ['Nom_Direccio']),
-                direccio: getFieldStr(r.fieldData, ['Direccio']),
-                poblacio: getFieldStr(r.fieldData, ['Poblacio']),
-                barri: getFieldStr(r.fieldData, ['Barri']),
-                provincia: getFieldStr(r.fieldData, ['Provincia']),
-                empresa: getFieldStr(r.fieldData, ['Empresa']),
-                listContactes: getFieldStr(r.fieldData, ['List_Contactes']),
-                tel1: getFieldStr(r.fieldData, ['Tel_1']),
-                etiquetaProv: getFieldStr(r.fieldData, ['Etiqueta_Prov']),
-                etiquetaDireccio: getFieldStr(r.fieldData, ['Etiqueta_Direccio']),
-                idXofer: getFieldStr(r.fieldData, ['Id_Xofer']),
-                nomXofer: getFieldStr(r.fieldData, ['Nom_Compllet']),
-              }));
+              const items: DireccioItem[] = (res.response?.data ?? [])
+                .map(r => this.mapRecord(r))
+                .filter(d => !d.idXofer || d.idXofer.toLowerCase() === access.idPersonal!.toLowerCase());
               return this.enrichWithAddressItems(items).pipe(
-                map(enrichedItems => ({ total: res.response.dataInfo.foundCount, items: enrichedItems }))
+                map(enrichedItems => ({ total: res.response?.dataInfo?.foundCount ?? 0, items: enrichedItems }))
               );
             })
           );
         }
-        // Developer: show all records
+
+        // Acceso total (fbellota, grodriguez, jsubiros): mostrar todos los registros
         return this.fm.listRecords('Ldir_Llista', { limit, offset }).pipe(
           switchMap(res => {
-            const items: DireccioItem[] = res.response.data.map(r => ({
-              recordId: r.recordId,
-              modId: r.modId,
-              idDireccio: getFieldStr(r.fieldData, ['Id_Direccio_serial', 'Id_Direccio']),
-              nomDireccio: getFieldStr(r.fieldData, ['Nom_Direccio']),
-              direccio: getFieldStr(r.fieldData, ['Direccio']),
-              poblacio: getFieldStr(r.fieldData, ['Poblacio']),
-              barri: getFieldStr(r.fieldData, ['Barri']),
-              provincia: getFieldStr(r.fieldData, ['Provincia']),
-              empresa: getFieldStr(r.fieldData, ['Empresa']),
-              listContactes: getFieldStr(r.fieldData, ['List_Contactes']),
-              tel1: getFieldStr(r.fieldData, ['Tel_1']),
-              etiquetaProv: getFieldStr(r.fieldData, ['Etiqueta_Prov']),
-              etiquetaDireccio: getFieldStr(r.fieldData, ['Etiqueta_Direccio']),
-              idXofer: getFieldStr(r.fieldData, ['Id_Xofer']),
-              nomXofer: getFieldStr(r.fieldData, ['Nom_Compllet']),
-            }));
+            const items: DireccioItem[] = (res.response?.data ?? []).map(r => this.mapRecord(r));
             return this.enrichWithAddressItems(items).pipe(
-              map(enrichedItems => ({ total: res.response.dataInfo.totalRecordCount, items: enrichedItems }))
+              map(enrichedItems => ({ total: res.response?.dataInfo?.totalRecordCount ?? 0, items: enrichedItems }))
             );
           })
         );
