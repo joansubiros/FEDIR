@@ -1,9 +1,9 @@
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, concatMap, forkJoin, map, of, switchMap, throwError } from 'rxjs';
+import { EMPTY, Observable, catchError, concatMap, expand, forkJoin, map, of, reduce, shareReplay, switchMap, throwError } from 'rxjs';
 import { FileMakerService } from '../../core/services/filemaker.service';
 import { SessionService } from '../../core/services/session.service';
 import { PersonalService, type PersonalItem } from './personal.service';
-import type { RutaListItem, RutaDetalle, LrutaDetalle, DireccioItem } from '../../core/models/fm.models';
+import type { RutaListItem, RutaDetalle, LrutaDetalle, DireccioItem, FmRecord, FmFindResponse } from '../../core/models/fm.models';
 
 const getFieldStr = (data: Record<string, unknown>, names: string[]): string => {
   for (const n of names) {
@@ -382,45 +382,125 @@ export class DireccioService {
     );
   }
 
-  search(query: string, limit = 50, offset = 0): Observable<{ items: DireccioItem[]; total: number }> {
-    const userId$ = this.getCurrentUserId();
-    const q: Record<string, unknown>[] = query
-      ? [
-          { 'Nom_Direccio': `*${query}*` },
-          { 'Empresa': `*${query}*` },
-          { 'Busca': `*${query}*` },
-        ]
-      : [{}];
-    return userId$.pipe(
+  /** Índice local (todas las direcciones del usuario con sus datos de dirección), cacheado por usuario. */
+  private index$?: Observable<DireccioItem[]>;
+  private indexUser = '';
+
+  private getIndex(): Observable<DireccioItem[]> {
+    const user = this.getCurrentUsername() ?? '';
+    if (!this.index$ || this.indexUser !== user) {
+      this.indexUser = user;
+      const index$ = this.buildIndex().pipe(
+        catchError(err => {
+          // No cachear fallos: el siguiente intento vuelve a construir el índice
+          if (this.index$ === index$) this.index$ = undefined;
+          return throwError(() => err);
+        }),
+        shareReplay(1),
+      );
+      this.index$ = index$;
+    }
+    return this.index$;
+  }
+
+  /** Descarga paginada completa de un layout (find o list). */
+  private fetchAll(page: (offset: number) => Observable<FmFindResponse>, pageSize = 500, maxRecords = 10000): Observable<FmRecord[]> {
+    type State = { next: number; data: FmRecord[]; done: boolean };
+    return of<State>({ next: 0, data: [], done: false }).pipe(
+      expand(s => s.done
+        ? EMPTY
+        : page(s.next).pipe(
+            map(res => {
+              const data = res.response.data ?? [];
+              const next = s.next + data.length;
+              return { next, data, done: data.length < pageSize || next >= maxRecords } as State;
+            }),
+            // 401 "sin registros" (HTTP 404) => lista vacía
+            catchError(err => {
+              const code = err?.error?.messages?.[0]?.code;
+              if (code === '401') return of<State>({ next: s.next, data: [], done: true });
+              return throwError(() => err);
+            }),
+          )),
+      reduce((acc, s) => acc.concat(s.data), [] as FmRecord[]),
+    );
+  }
+
+  private mapRecord(r: FmRecord): DireccioItem {
+    return {
+      recordId: r.recordId,
+      modId: r.modId,
+      idDireccio: getFieldStr(r.fieldData, ['Id_Direccio_serial', 'Id_Direccio']),
+      nomDireccio: getFieldStr(r.fieldData, ['Nom_Direccio']),
+      direccio: getFieldStr(r.fieldData, ['Direccio']),
+      poblacio: getFieldStr(r.fieldData, ['Poblacio']),
+      barri: getFieldStr(r.fieldData, ['Barri']),
+      provincia: getFieldStr(r.fieldData, ['Provincia']),
+      empresa: getFieldStr(r.fieldData, ['Empresa']),
+      listContactes: getFieldStr(r.fieldData, ['List_Contactes']),
+      tel1: getFieldStr(r.fieldData, ['Tel_1']),
+      etiquetaProv: getFieldStr(r.fieldData, ['Etiqueta_Prov']),
+      etiquetaDireccio: getFieldStr(r.fieldData, ['Etiqueta_Direccio']),
+      idXofer: getFieldStr(r.fieldData, ['Id_Xofer']),
+      nomXofer: getFieldStr(r.fieldData, ['Nom_Compllet']),
+    };
+  }
+
+  private buildIndex(): Observable<DireccioItem[]> {
+    return this.getCurrentUserId().pipe(
       switchMap(userId => {
-        const queryWithUser = userId
-          ? q.map(item => ({ ...item, Id_Xofer: userId }))
-          : q;
-        return this.fm.findRecords('Ldir_Llista', queryWithUser, { limit, offset }).pipe(
-          switchMap(res => {
-            const items: DireccioItem[] = res.response.data.map(r => ({
-              recordId: r.recordId,
-              modId: r.modId,
-              idDireccio: getFieldStr(r.fieldData, ['Id_Direccio_serial', 'Id_Direccio']),
-              nomDireccio: getFieldStr(r.fieldData, ['Nom_Direccio']),
-              direccio: getFieldStr(r.fieldData, ['Direccio']),
-              poblacio: getFieldStr(r.fieldData, ['Poblacio']),
-              barri: getFieldStr(r.fieldData, ['Barri']),
-              provincia: getFieldStr(r.fieldData, ['Provincia']),
-              empresa: getFieldStr(r.fieldData, ['Empresa']),
-              listContactes: getFieldStr(r.fieldData, ['List_Contactes']),
-              tel1: getFieldStr(r.fieldData, ['Tel_1']),
-              etiquetaProv: getFieldStr(r.fieldData, ['Etiqueta_Prov']),
-              etiquetaDireccio: getFieldStr(r.fieldData, ['Etiqueta_Direccio']),
-              idXofer: getFieldStr(r.fieldData, ['Id_Xofer']),
-              nomXofer: getFieldStr(r.fieldData, ['Nom_Compllet']),
-            }));
-            return this.enrichWithAddressItems(items).pipe(
-              map(enrichedItems => ({ total: res.response.dataInfo.foundCount, items: enrichedItems }))
-            );
-          })
+        const base$ = userId
+          ? this.fetchAll(offset => this.fm.findRecords('Ldir_Llista', [{ Id_Xofer: userId }], { limit: 500, offset }))
+          : this.fetchAll(offset => this.fm.listRecords('Ldir_Llista', { limit: 500, offset }));
+        // Datos de dirección (Direccio, Poblacio, Barri...) del layout Phone_Ldir_Llista; el mismo recordId (tabla LDIRECCIONS)
+        const addr$ = this.fetchAll(offset => this.fm.listRecords('Phone_Ldir_Llista', { limit: 500, offset })).pipe(
+          catchError(err => {
+            console.warn('[direcciones] no se pudo cargar Phone_Ldir_Llista', err);
+            return of([] as FmRecord[]);
+          }),
         );
-      })
+        return forkJoin([base$, addr$]);
+      }),
+      map(([base, addr]) => {
+        const addrById = new Map<string, FmRecord>(addr.map(r => [r.recordId, r]));
+        return base.map(r => {
+          const item = this.mapRecord(r);
+          const a = addrById.get(r.recordId);
+          if (!a) return item;
+          const ai = this.mapRecord(a);
+          return {
+            ...item,
+            direccio: (ai.direccio && ai.direccio !== item.nomDireccio) ? ai.direccio : item.direccio,
+            poblacio: ai.poblacio || item.poblacio,
+            barri: ai.barri || item.barri,
+            provincia: ai.provincia || item.provincia,
+            empresa: ai.empresa || item.empresa,
+            listContactes: ai.listContactes || item.listContactes,
+            etiquetaProv: ai.etiquetaProv || item.etiquetaProv,
+            etiquetaDireccio: ai.etiquetaDireccio || item.etiquetaDireccio,
+          };
+        });
+      }),
+    );
+  }
+
+  private normalize(text: string): string {
+    return text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  }
+
+  /** Búsqueda local (sin acentos ni mayúsculas) por nombre, dirección, población, barrio y empresa; todas las palabras deben coincidir. */
+  search(query: string, limit = 50, offset = 0): Observable<{ items: DireccioItem[]; total: number }> {
+    const words = this.normalize(query).split(/\s+/).filter(Boolean);
+    return this.getIndex().pipe(
+      map(all => {
+        const matches = words.length
+          ? all.filter(d => {
+              const hay = this.normalize([d.nomDireccio, d.direccio, d.poblacio, d.barri, d.provincia, d.empresa, d.etiquetaDireccio].join(' '));
+              return words.every(w => hay.includes(w));
+            })
+          : all;
+        return { total: matches.length, items: matches.slice(offset, offset + limit) };
+      }),
     );
   }
 

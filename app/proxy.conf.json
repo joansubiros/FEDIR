@@ -1,8 +1,0 @@
-{
-  "/fmi": {
-    "target": "https://fmsuit.cat",
-    "secure": true,
-    "changeOrigin": true,
-    "logLevel": "debug"
-  }
-}

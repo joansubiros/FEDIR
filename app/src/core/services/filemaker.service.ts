@@ -89,7 +89,8 @@ export class FileMakerService {
   findRecords(layout: string, query: Record<string, unknown>[] = [], opts: { offset?: number; limit?: number; sort?: { fieldName: string; sortOrder: string }[] } = {}): Observable<FmFindResponse> {
     const url = `${this.baseUrl}/layouts/${encodeURIComponent(layout)}/_find`;
     const body: Record<string, unknown> = { query: query.length ? query : [{}] };
-    if (opts.offset != null) body['offset'] = String(opts.offset);
+    // La Data API usa offset base 1 (offset 0 no es válido)
+    if (opts.offset != null) body['offset'] = String(opts.offset + 1);
     if (opts.limit != null) body['limit'] = String(opts.limit);
     if (opts.sort) body['sort'] = opts.sort;
     return this.http.post<FmFindResponse>(url, body);
@@ -97,8 +98,8 @@ export class FileMakerService {
 
   listRecords(layout: string, opts: { offset?: number; limit?: number; sort?: { fieldName: string; sortOrder: string }[] } = {}): Observable<FmFindResponse> {
     const params: string[] = [];
-    // FMS no acepta _offset=0; solo añadir si es > 0
-    if (opts.offset != null && opts.offset > 0) params.push(`_offset=${opts.offset}`);
+    // La Data API usa offset base 1 y no acepta _offset=0; solo añadir si es > 0
+    if (opts.offset != null && opts.offset > 0) params.push(`_offset=${opts.offset + 1}`);
     if (opts.limit != null) params.push(`_limit=${opts.limit}`);
     if (opts.sort?.length) params.push(`_sort=${encodeURIComponent(JSON.stringify(opts.sort))}`);
     const qs = params.length ? `?${params.join('&')}` : '';

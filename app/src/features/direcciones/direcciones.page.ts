@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, OnDestroy, OnInit, inject } from '@angular/core';
 import { BehaviorSubject, Observable, Subject, combineLatest, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, switchMap, tap, finalize, shareReplay, map, takeUntil, scan, catchError } from 'rxjs/operators';
+import { distinctUntilChanged, switchMap, tap, finalize, shareReplay, map, takeUntil, scan, catchError } from 'rxjs/operators';
 import { DireccioService } from '../../core/services/ruta.service';
 import { SessionService } from '../../core/services/session.service';
 import type { DireccioItem } from '../../core/models/fm.models';
@@ -34,7 +34,7 @@ export class DireccionesPage implements OnInit, OnDestroy {
   }
 
   constructor() {
-    const debouncedQuery$ = this.query$.pipe(debounceTime(300), distinctUntilChanged());
+    const debouncedQuery$ = this.query$.pipe(distinctUntilChanged());
 
     // When query or page changes, fetch data
     const fetch$ = combineLatest([debouncedQuery$, this.page$]).pipe(
@@ -84,9 +84,11 @@ export class DireccionesPage implements OnInit, OnDestroy {
   }
 
   onSearch(ev: CustomEvent): void {
-    this.searchText = (ev.detail.value as string) ?? '';
-    this.page$.next(0);
+    this.searchText = ((ev.detail.value as string) ?? '').trim();
+    // Al cambiar la búsqueda la lista se reinicia. Si la página ya es 0, el cambio de
+    // query dispara la carga; si no, volver a la página 0 la dispara (evita doble petición).
     this.query$.next(this.searchText);
+    if (this.page$.value !== 0) this.page$.next(0);
   }
 
   onLoadMore(ev: CustomEvent): void {
