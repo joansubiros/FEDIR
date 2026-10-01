@@ -1,15 +1,19 @@
 {
+  "id": "/",
   "name": "FEDIR — Logística y Gestión Sustentable",
   "short_name": "FEDIR",
   "description": "FEDIR Logística y Gestión Sustentable",
+  "lang": "es",
   "theme_color": "#1084bd",
   "background_color": "#ffffff",
   "display": "standalone",
-  "scope": "./",
-  "start_url": "./",
+  "orientation": "portrait",
+  "scope": "/",
+  "start_url": "/",
   "icons": [
-    { "src": "assets/icon/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "assets/icon/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "assets/icon/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable any" }
+    { "src": "assets/icon/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "assets/icon/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

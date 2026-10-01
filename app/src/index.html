@@ -18,21 +18,24 @@
   <meta name="theme-color" content="#1084bd" />
 
   <!-- add to homescreen for ios -->
-  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="FEDIR" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icon/icon-192.png" />
 
   <script>
-    // La app no registra ningún service worker: eliminar los residuales (builds antiguos con ngsw)
-    // y sus cachés en cualquier entorno, para no servir versiones stale tras un deploy.
-    var cleanup = true;
-    if (cleanup && 'serviceWorker' in navigator) {
+    // En desarrollo local, desregistrar Service Workers residuales para evitar problemas de caché con Vite
+    var isDev = window.location.hostname === 'localhost' ||
+                window.location.hostname === '127.0.0.1' ||
+                window.location.hostname === '::1';
+    if (isDev && 'serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(function(registrations) {
         for (var i = 0; i < registrations.length; i++) {
           registrations[i].unregister();
         }
       });
     }
-    if (cleanup && 'caches' in window) {
+    if (isDev && 'caches' in window) {
       caches.keys().then(function(names) {
         for (var i = 0; i < names.length; i++) {
           caches.delete(names[i]);
