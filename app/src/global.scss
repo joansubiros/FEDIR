@@ -285,3 +285,17 @@ ion-header ion-toolbar ion-searchbar {
 .fedir-with-footer {
   --padding-bottom: calc(56px + var(--ion-safe-area-bottom, 0px) + 8px);
 }
+
+/* Aspecto y sensaciones de App Nativa */
+html, body {
+  overscroll-behavior-y: contain;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input, textarea, ion-input, ion-textarea, [contenteditable="true"] {
+  user-select: text;
+  -webkit-user-select: text;
+}
